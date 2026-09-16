@@ -28,6 +28,7 @@ namespace GameConfig
 	}
 
 	//
+	constexpr float PLAYER_COLLIDER_RADIUS = 22.0f;
 	constexpr float PLAYER_SCALE = 0.3f;
 	constexpr float PLAYER_SPEED = 200.0f;
 	constexpr float AIM_SENSITIVITY = 0.15f;

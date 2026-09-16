@@ -13,6 +13,8 @@ Player::Player(const std::string& textureName)
 	_transform.scale = GameConfig::PLAYER_SCALE;
 	_movement.speed = GameConfig::PLAYER_SPEED;
 	_muzzleOffset = GameConfig::PLAYER_MUZZLE_OFFSET;
+
+	_collider.Init(GameConfig::PLAYER_COLLIDER_RADIUS, _transform);
 }
 
 void Player::Update(float delta)
@@ -45,4 +47,5 @@ void Player::SetCollisionMap(const CollisionMap* collisionMap)
 void Player::Draw() const
 {
 	_sprite.Draw(_transform);
+	_collider.DrawDebug();
 }
