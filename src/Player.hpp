@@ -19,8 +19,8 @@ public:
 	void Draw() const;
 	void Update(float delta);
 
+	void Reset();
 	void Hit();
-
 	int GetHealth() const { return _health; };
 	int GetMaxHealth() const { return _maxHealth; };
 

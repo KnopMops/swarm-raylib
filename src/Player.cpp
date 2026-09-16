@@ -24,6 +24,12 @@ Player::Player(const std::string& textureName)
 	_invTime = GameConfig::PLAYER_INV_TIME;
 }
 
+void Player::Reset()
+{
+	_health = _maxHealth;
+	_invTimer = 0.0f;
+}
+
 float Player::GetPlayerSpeed() const 
 {
     return _movement.speed * (IsInvincible() ? INVINCIBILITY_SPEED_BOOST : 1.0f);	

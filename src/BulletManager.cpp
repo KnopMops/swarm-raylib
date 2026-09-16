@@ -16,6 +16,11 @@ void BulletManager::Spawn(Vector2 pos, float angleDeg)
 	_pool.push_back(std::move(bullet));
 }
 
+void BulletManager::DeactivateAll()
+{
+	for (const auto& b : _pool) b->Deactivate();
+}
+
 void BulletManager::Update(float dt)
 {
 	for (const auto& b : _pool) b->Update(dt);

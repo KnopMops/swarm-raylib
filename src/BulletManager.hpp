@@ -13,6 +13,8 @@ public:
 	void Update(float dt);
 	void Draw();
 
+	void DeactivateAll();
+
 	const std::vector<std::unique_ptr<Bullet>>& GetPool() const { return _pool; };
 
 	int GetPoolTotal() const { return (int)_pool.size(); };

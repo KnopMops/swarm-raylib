@@ -94,6 +94,15 @@ int main() {
 		if (IsKeyPressed(KEY_F2)) 
 			enemies.DeactivateAll();
 
+		if (gameState == GameState::GameOver && IsKeyPressed(KEY_R))
+		{
+			player.Reset();
+			player.SetPosition({ GameConfig::MAP_W * 0.5f, GameConfig::MAP_H * 0.5f });
+			bullets.DeactivateAll();
+			enemies.DeactivateAll();
+			gameState = GameState::Playing;
+		}
+
 		GI::get().Update();
 
 		float dt = GetFrameTime();
