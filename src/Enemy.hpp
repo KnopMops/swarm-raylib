@@ -7,6 +7,12 @@
 
 class Player;
 
+enum class EnemyState
+{
+	Moving,
+	Dying
+};
+
 class Enemy
 {
 public:
@@ -19,6 +25,9 @@ public:
 	bool IsAlive() const { return _alive; }
 	void Deactivate();
 
+	void Kill();
+	bool CanBeHit() const { return _state == EnemyState::Moving; };
+
 	void Activate(Vector2 pos);
 
 	const CircleCollider& GetCollider() const { return _collider; };
@@ -30,10 +39,14 @@ private:
 
 	const Player* _player = nullptr;
 
+	EnemyState _state = EnemyState::Moving;
+
 	float _speed = 80.0f;
 	float _retargetTimer = 0.0f;
 	float _retargetMin = 1.0f;
 	float _retargetMax = 2.0f;
+
+	float _dyingTimer = 0.0f;
 
 	void Retarget();
 

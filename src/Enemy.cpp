@@ -15,6 +15,20 @@ Enemy::Enemy()
 	health = 2;
 }
 
+void Enemy::Kill()
+{
+	if (_state == EnemyState::Dying) return;
+
+	health -= 1;
+	
+	if (health <= 0) {
+		_state = EnemyState::Dying;
+		_dyingTimer = 0.6f;
+
+		TraceLog(LOG_INFO, "Enemy dyied");
+	}
+}
+
 void Enemy::Retarget()
 {
 	_transform.LookAt(_player->GetPosition());
@@ -25,11 +39,24 @@ void Enemy::Update(float dt)
 {
 	if (!_alive) return;
 
-	_retargetTimer -= dt;
-	if (_retargetTimer < 0.0f) Retarget();
+	switch (_state)
+	{
+	case EnemyState::Moving:
+		_retargetTimer -= dt;
+		if (_retargetTimer < 0.0f) Retarget();
 
-	_transform.MoveForward(_speed * dt);
-	_sprite.Update(dt);
+		_transform.MoveForward(_speed * dt);
+		_sprite.Update(dt);
+
+		break;
+
+	case EnemyState::Dying:
+		_dyingTimer -= dt;
+		if (_dyingTimer < 0.0f) Deactivate();
+	
+	default:
+		break;
+	}
 }
 
 void Enemy::Activate(Vector2 position)
@@ -37,6 +64,8 @@ void Enemy::Activate(Vector2 position)
 	_alive = true;
 	_transform.position = position;
 	_retargetTimer = 0.0f;
+
+	_state = EnemyState::Moving;
 
 	health = 2;
 }

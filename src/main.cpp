@@ -110,13 +110,13 @@ int main() {
 
 			for (auto& enemy : enemies.GetPool())
 			{
-				if (!enemy->IsAlive()) continue;
+				if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
 
 				if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider()))
 				{
 
 					bullet->Deactivate();
-					enemy->Deactivate();
+					enemy->Kill();
 					break;
 				}
 			}
