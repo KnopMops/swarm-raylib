@@ -24,6 +24,7 @@ public:
 
 	const Texture2D& GetTexture(const std::string& name) const;
 	const Image& GetImage(const std::string& name) const;
+	const Font& GetFont   (const std::string& key) const;
 
 private:
 	ResourceManager() = default;
@@ -33,7 +34,7 @@ private:
 
 	std::unordered_map<std::string, Texture2D> _textures;
 	std::unordered_map<std::string, Image> _images;
-
+	std::unordered_map<std::string, Font> m_fonts;
 };
 
 namespace RM

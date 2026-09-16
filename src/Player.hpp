@@ -30,6 +30,8 @@ public:
 	bool IsInvincible() const { return _invTimer > 0.0f; };
 	float GetPlayerSpeed() const;
 
+	bool IsDead() const { return _health <= 0; };
+
 	void SetPosition(Vector2 position);
 	void SetCollisionMap(const CollisionMap* collisionMap);
 

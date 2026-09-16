@@ -19,6 +19,8 @@
 #include "Player.hpp"
 
 
+enum class GameState { Playing, GameOver };
+
 int main() {
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE);
@@ -30,6 +32,8 @@ int main() {
 	SetExitKey(KEY_NULL);
 
 	RM::get().Load();
+
+	const Font& font = RM::get().GetFont(RK::FONT_MAIN);
 
 	Vector2 pos = GetMonitorPosition(1);
 	SetWindowPosition(pos.x + 320, pos.y + 180);
@@ -63,6 +67,8 @@ int main() {
 	enemies.Init(&player);
 	enemies.Spawn({ GameConfig::MAP_W * 0.5f + 200.0f, GameConfig::MAP_H * 0.5f });
 
+	GameState gameState = GameState::Playing;
+
 	while (!WindowShouldClose()) 
 	{
 
@@ -92,47 +98,52 @@ int main() {
 
 		float dt = GetFrameTime();
 
-		if (GI::get().State().shoot)
+		if (gameState == GameState::Playing)
 		{
-			bullets.Spawn(player.GetFiringPosition(), GI::get().State().aimAngle);
-		}
+			if (GI::get().State().shoot)
+			{
+				bullets.Spawn(player.GetFiringPosition(), GI::get().State().aimAngle);
+			}
 
-		player.Update(dt);
-		bullets.Update(dt);
-		enemies.Update(dt);
+			player.Update(dt);
+			bullets.Update(dt);
+			enemies.Update(dt);
 
-		for (auto& bullet : bullets.GetPool())
-		{
-			if (!bullet->IsAlive()) continue;
+			for (auto& bullet : bullets.GetPool())
+			{
+				if (!bullet->IsAlive()) continue;
+
+				for (auto& enemy : enemies.GetPool())
+				{
+					if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
+
+					if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider()))
+					{
+
+						bullet->Deactivate();
+						enemy->Kill();
+						break;
+					}
+				}
+			}
 
 			for (auto& enemy : enemies.GetPool())
 			{
 				if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
 
-				if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider()))
+				if (player.GetCollider().IsCollidingWith(enemy->GetCollider()))
 				{
-
-					bullet->Deactivate();
-					enemy->Kill();
-					break;
+					player.Hit();
 				}
 			}
+
+			camera.target = player.GetPosition();
+
+			camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
+			camera.target.y = std::clamp(camera.target.y, halfH, GameConfig::MAP_H - halfH);
+
+			if (player.IsDead()) gameState = GameState::GameOver;
 		}
-
-		for (auto& enemy : enemies.GetPool())
-		{
-			if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
-
-			if (player.GetCollider().IsCollidingWith(enemy->GetCollider()))
-			{
-				player.Hit();
-			}
-		}
-
-		camera.target = player.GetPosition();
-
-		camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
-		camera.target.y = std::clamp(camera.target.y, halfH, GameConfig::MAP_H - halfH);
 
 		BeginTextureMode(canvas);
 		ClearBackground(BLACK);
@@ -151,18 +162,55 @@ int main() {
 
 		if (GameConfig::SHOW_DEBUG)
 		{
-			DrawRectangle(0, GameConfig::BASE_H - 32, GameConfig::BASE_W, 32, ColorAlpha(DARKBLUE, 0.6f));
+			DrawRectangle(0, GameConfig::BASE_H - 32, GameConfig::BASE_W, 32,
+						ColorAlpha(DARKBLUE, 0.6f));
 
-			//DrawText(TextFormat("CameraXY: %.0f, %.0f", camera.target.x, camera.target.y), 256, GameConfig::BASE_H - 24, 20, LIME);
-			DrawText(TextFormat("Player: XY: %.0f, %.0f, Speed: %.0f", player.GetPosition().x, player.GetPosition().y, player.GetPlayerSpeed()), 12, GameConfig::BASE_H - 24, 20, LIME);
-			DrawText(TextFormat("Rotation: %.1f", GI::get().State().aimAngle), 400, GameConfig::BASE_H - 24, 20, LIME);
-			DrawText(TextFormat("HP: %d/%d, Bullets: %d/%d, Enemies: %d/%d", player.GetHealth(), player.GetMaxHealth(), bullets.CountAlive(), bullets.GetPoolTotal(), enemies.CountAlive(), enemies.GetPoolTotal()), 600, GameConfig::BASE_H - 24, 20, LIME);
+			DrawTextEx(font,
+				TextFormat("XY камеры: %.0f, %.0f", camera.target.x, camera.target.y),
+				{ 12, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
+
+			DrawTextEx(font,
+				TextFormat("Игрок: XY: %.0f, %.0f, Скорость: %.0f",
+						player.GetPosition().x, player.GetPosition().y,
+						player.GetPlayerSpeed()),
+				{ 300, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
+
+			DrawTextEx(font,
+				TextFormat("Здоровье: %d/%d, Патроны: %d/%d, Враги: %d/%d",
+						player.GetHealth(), player.GetMaxHealth(),
+						bullets.CountAlive(), bullets.GetPoolTotal(),
+						enemies.CountAlive(), enemies.GetPoolTotal()),
+				{ 600, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
 
 			const char* fpsText = TextFormat("FPS: %d", GetFPS());
-			int fpsWidth = MeasureText(fpsText, 20);
-			DrawText(fpsText, GameConfig::BASE_W - fpsWidth - 12, GameConfig::BASE_H - 24, 20, LIME);
-		}
+			Vector2 fpsSize = MeasureTextEx(font, fpsText, 20, 0.0f);
+			DrawTextEx(font, fpsText,
+				{ GameConfig::BASE_W - fpsSize.x - 12, GameConfig::BASE_H - 24 },
+				20, 0.0f, LIME);
 
+		}
+			
+		if (gameState == GameState::GameOver)
+		{
+			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
+		
+			const char* title = "ИГРА ОКОНЧЕНА";
+
+			Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
+
+			DrawTextEx(font, title,
+			{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f - 60.0f },
+			60.0f, 0.0f, RED);
+
+			const char* prompt = "Нажмите R чтобы возродится или M чтобы выйти в главное меню.";
+			Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
+			DrawTextEx(font, prompt,
+			{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f + 12.0f },
+			32.0f, 0.0f, WHITE);
+		}
+			
 		EndTextureMode();
 
 		float scale = std::min(
