@@ -30,7 +30,7 @@ struct Sprite
 
 	void Init(const std::string& textureName);
 	void Init(const std::string& textureName, int fw, int fh, int count, float fps, bool looping = true);
-	void Draw(const Transform2D& transform) const;
+	void Draw(const Transform2D& transform, Color tint = WHITE) const;
 	void Update(float dt);
 	void Reset();
 };

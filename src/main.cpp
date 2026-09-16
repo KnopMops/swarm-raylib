@@ -153,10 +153,10 @@ int main() {
 		{
 			DrawRectangle(0, GameConfig::BASE_H - 32, GameConfig::BASE_W, 32, ColorAlpha(DARKBLUE, 0.6f));
 
-			DrawText(TextFormat("CameraXY: %.0f, %.0f", camera.target.x, camera.target.y), 256, GameConfig::BASE_H - 24, 20, LIME);
-			DrawText(TextFormat("PlayerXY: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, GameConfig::BASE_H - 24, 20, LIME);
-			DrawText(TextFormat("Rotation: %.1f", GI::get().State().aimAngle), 512, GameConfig::BASE_H - 24, 20, LIME);
-			DrawText(TextFormat("HP: %d/%d, Bullets: %d/%d, Enemies: %d/%d", player.GetHealth(), player.GetMaxHealth(), bullets.CountAlive(), bullets.GetPoolTotal(), enemies.CountAlive(), enemies.GetPoolTotal()), 700, GameConfig::BASE_H - 24, 20, LIME);
+			//DrawText(TextFormat("CameraXY: %.0f, %.0f", camera.target.x, camera.target.y), 256, GameConfig::BASE_H - 24, 20, LIME);
+			DrawText(TextFormat("Player: XY: %.0f, %.0f, Speed: %.0f", player.GetPosition().x, player.GetPosition().y, player.GetPlayerSpeed()), 12, GameConfig::BASE_H - 24, 20, LIME);
+			DrawText(TextFormat("Rotation: %.1f", GI::get().State().aimAngle), 400, GameConfig::BASE_H - 24, 20, LIME);
+			DrawText(TextFormat("HP: %d/%d, Bullets: %d/%d, Enemies: %d/%d", player.GetHealth(), player.GetMaxHealth(), bullets.CountAlive(), bullets.GetPoolTotal(), enemies.CountAlive(), enemies.GetPoolTotal()), 600, GameConfig::BASE_H - 24, 20, LIME);
 
 			const char* fpsText = TextFormat("FPS: %d", GetFPS());
 			int fpsWidth = MeasureText(fpsText, 20);

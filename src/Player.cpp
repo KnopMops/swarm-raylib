@@ -5,6 +5,8 @@
 #include "raymath.h"
 
 
+static constexpr float INVINCIBILITY_SPEED_BOOST = 1.5f;
+
 Player::Player(const std::string& textureName)
 {
 	_sprite.Init(textureName);
@@ -18,11 +20,23 @@ Player::Player(const std::string& textureName)
 
 	_maxHealth = GameConfig::PLAYER_MAX_HEALTH;
 	_health = GameConfig::PLAYER_MAX_HEALTH;
+
+	_invTime = GameConfig::PLAYER_INV_TIME;
+}
+
+float Player::GetPlayerSpeed() const 
+{
+    return _movement.speed * (IsInvincible() ? INVINCIBILITY_SPEED_BOOST : 1.0f);	
 }
 
 void Player::Update(float delta)
 {
-	_movement.Update(_transform, GI::get().State(), delta, _collisionMap);
+	const float speedMultiplier = IsInvincible() ? INVINCIBILITY_SPEED_BOOST : 1.0f;
+
+	_movement.Update(_transform, GI::get().State(), delta, _collisionMap, speedMultiplier);
+
+	if (_invTimer > 0.0f)
+		_invTimer -= delta;
 }
 
 void Player::SetPosition(Vector2 position)
@@ -37,9 +51,10 @@ Vector2 Player::GetPosition() const
 
 void Player::Hit()
 {
-	if (_health <= 0) return;
+	if (_invTimer > 0.0f || _health <= 0) return;
 
 	_health--;
+	_invTimer = _invTime;
 }
 
 Vector2 Player::GetFiringPosition() const
@@ -56,6 +71,6 @@ void Player::SetCollisionMap(const CollisionMap* collisionMap)
 
 void Player::Draw() const
 {
-	_sprite.Draw(_transform);
+	_sprite.Draw(_transform, IsInvincible() ? ColorAlpha(RED, fabsf(sinf(GetTime() * 10.0f))) : WHITE);
 	_collider.DrawDebug();
 }

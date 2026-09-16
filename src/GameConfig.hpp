@@ -29,6 +29,7 @@ namespace GameConfig
 
 	//
 	constexpr int PLAYER_MAX_HEALTH = 3;
+	constexpr float PLAYER_INV_TIME = 1.5f;
 
 	constexpr float PLAYER_COLLIDER_RADIUS = 22.0f;
 	constexpr float PLAYER_SCALE = 0.3f;

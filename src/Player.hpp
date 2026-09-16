@@ -27,6 +27,9 @@ public:
 	Vector2 GetPosition() const;
 	Vector2 GetFiringPosition() const;
 
+	bool IsInvincible() const { return _invTimer > 0.0f; };
+	float GetPlayerSpeed() const;
+
 	void SetPosition(Vector2 position);
 	void SetCollisionMap(const CollisionMap* collisionMap);
 
@@ -42,6 +45,11 @@ private:
 
 	Vector2 _muzzleOffset = { 0.0f, 0.0f };
 
+	float _speed = 0.0f;
+
 	int _maxHealth = 1;
 	int _health = 1;
+
+	float _invTimer = 0.0f;
+	float _invTime = 0.0f;
 };

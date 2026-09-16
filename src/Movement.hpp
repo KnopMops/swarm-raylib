@@ -12,5 +12,5 @@ struct Movement
 {
 	float speed = 0.0f;
 
-	void Update(Transform2D& transform, const MovementState& movementState, float delta, const CollisionMap *collisionMap = nullptr);
+	void Update(Transform2D& transform, const MovementState& movementState, float delta, const CollisionMap *collisionMap = nullptr, float speedMultiplier = 1.0f);
 };
