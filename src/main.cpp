@@ -119,6 +119,16 @@ int main() {
 			}
 		}
 
+		for (auto& enemy : enemies.GetPool())
+		{
+			if (!enemy->IsAlive() || !enemy->CanBeHit()) continue;
+
+			if (player.GetCollider().IsCollidingWith(enemy->GetCollider()))
+			{
+				player.Hit();
+			}
+		}
+
 		camera.target = player.GetPosition();
 
 		camera.target.x = std::clamp(camera.target.x, halfW, GameConfig::MAP_W - halfW);
@@ -146,7 +156,7 @@ int main() {
 			DrawText(TextFormat("CameraXY: %.0f, %.0f", camera.target.x, camera.target.y), 256, GameConfig::BASE_H - 24, 20, LIME);
 			DrawText(TextFormat("PlayerXY: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, GameConfig::BASE_H - 24, 20, LIME);
 			DrawText(TextFormat("Rotation: %.1f", GI::get().State().aimAngle), 512, GameConfig::BASE_H - 24, 20, LIME);
-			DrawText(TextFormat("Bullets: %d/%d, Enemies: %d/%d", bullets.CountAlive(), bullets.GetPoolTotal(), enemies.CountAlive(), enemies.GetPoolTotal()), 700, GameConfig::BASE_H - 24, 20, LIME);
+			DrawText(TextFormat("HP: %d/%d, Bullets: %d/%d, Enemies: %d/%d", player.GetHealth(), player.GetMaxHealth(), bullets.CountAlive(), bullets.GetPoolTotal(), enemies.CountAlive(), enemies.GetPoolTotal()), 700, GameConfig::BASE_H - 24, 20, LIME);
 
 			const char* fpsText = TextFormat("FPS: %d", GetFPS());
 			int fpsWidth = MeasureText(fpsText, 20);

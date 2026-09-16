@@ -28,6 +28,8 @@ namespace GameConfig
 	}
 
 	//
+	constexpr int PLAYER_MAX_HEALTH = 3;
+
 	constexpr float PLAYER_COLLIDER_RADIUS = 22.0f;
 	constexpr float PLAYER_SCALE = 0.3f;
 	constexpr float PLAYER_SPEED = 200.0f;

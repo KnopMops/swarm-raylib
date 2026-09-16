@@ -19,6 +19,11 @@ public:
 	void Draw() const;
 	void Update(float delta);
 
+	void Hit();
+
+	int GetHealth() const { return _health; };
+	int GetMaxHealth() const { return _maxHealth; };
+
 	Vector2 GetPosition() const;
 	Vector2 GetFiringPosition() const;
 
@@ -36,4 +41,7 @@ private:
 	const CollisionMap* _collisionMap = nullptr;
 
 	Vector2 _muzzleOffset = { 0.0f, 0.0f };
+
+	int _maxHealth = 1;
+	int _health = 1;
 };

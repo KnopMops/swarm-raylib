@@ -15,6 +15,9 @@ Player::Player(const std::string& textureName)
 	_muzzleOffset = GameConfig::PLAYER_MUZZLE_OFFSET;
 
 	_collider.Init(GameConfig::PLAYER_COLLIDER_RADIUS, _transform);
+
+	_maxHealth = GameConfig::PLAYER_MAX_HEALTH;
+	_health = GameConfig::PLAYER_MAX_HEALTH;
 }
 
 void Player::Update(float delta)
@@ -30,6 +33,13 @@ void Player::SetPosition(Vector2 position)
 Vector2 Player::GetPosition() const
 {
 	return _transform.position;
+}
+
+void Player::Hit()
+{
+	if (_health <= 0) return;
+
+	_health--;
 }
 
 Vector2 Player::GetFiringPosition() const
