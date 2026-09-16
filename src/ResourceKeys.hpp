@@ -8,6 +8,7 @@ namespace RK
 	constexpr const char* BULLET  = "bullet";
 
 	constexpr const char* COCKROACH_MOVE = "cockroach-move";
+	constexpr const char* COCKROACH_DEATH = "cockroach-death";
 
 	constexpr const char* GAME_BG_COLLISION = "gameBgCollision";
 }

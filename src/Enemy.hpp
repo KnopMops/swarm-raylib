@@ -34,7 +34,10 @@ public:
 
 private:
 	Transform2D _transform;
-	Sprite _sprite;
+
+	Sprite _spriteMove;
+	Sprite _spriteDeath;
+
 	CircleCollider _collider;
 
 	const Player* _player = nullptr;
@@ -45,8 +48,6 @@ private:
 	float _retargetTimer = 0.0f;
 	float _retargetMin = 1.0f;
 	float _retargetMax = 2.0f;
-
-	float _dyingTimer = 0.0f;
 
 	void Retarget();
 

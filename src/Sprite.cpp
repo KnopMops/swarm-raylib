@@ -16,13 +16,15 @@ void Sprite::Init(const std::string& textureName)
 	sourceRects.push_back({ 0.0f, 0.0f, (float)frameWidth, (float)frameHeight });
 }
 
-void Sprite::Init(const std::string& textureName, int fw, int fh, int count, float fps) 
+void Sprite::Init(const std::string& textureName, int fw, int fh, int count, float fps, bool looping) 
 {
 	texture = &RM::get().GetTexture(textureName);
 
 	frameWidth = fw;
 	frameHeight = fh;
 	frameCount = count;
+
+	loop = looping;
 
 	frameDuration = (fps > 0.0f) ? 1.0 / fps : 0.0f;
 
@@ -49,11 +51,12 @@ void Sprite::Reset()
 {
 	timer = 0.0f;
 	currentFrame = 0;
+	finished = false;
 }
 
 void Sprite::Update(float dt)
 {
-	if (frameDuration <= 0.0f || frameCount <= 1) return;
+	if (frameDuration <= 0.0f || frameCount <= 1 || finished) return;
 
 	timer += dt;
 
@@ -61,7 +64,16 @@ void Sprite::Update(float dt)
 	{
 		timer = 0.0f;
 		currentFrame++;
-		if (currentFrame >= frameCount) currentFrame = 0;
+
+		if (currentFrame >= frameCount)
+		{
+			if (loop) currentFrame = 0;
+			else 
+			{
+				finished = true;
+				currentFrame = frameCount - 1;
+			}
+		}
 	}
 }
 

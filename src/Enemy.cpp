@@ -5,8 +5,12 @@
 
 Enemy::Enemy()
 {
-	_sprite.Init(RK::COCKROACH_MOVE, 64, 64, 8, 8.0f);
-	_sprite.rotationOffset = 90.0f;
+	_spriteMove.Init(RK::COCKROACH_MOVE, 64, 64, 8, 8.0f);
+	_spriteMove.rotationOffset = 90.0f;
+
+	_spriteDeath.Init(RK::COCKROACH_DEATH, 64, 64, 32, 64.0f, false);
+	_spriteDeath.rotationOffset = 90.0f;
+
 	_transform.scale = 1.0f;
 	_transform.rotation = 180.0f;
 
@@ -20,12 +24,10 @@ void Enemy::Kill()
 	if (_state == EnemyState::Dying) return;
 
 	health -= 1;
-	
+
 	if (health <= 0) {
 		_state = EnemyState::Dying;
-		_dyingTimer = 0.6f;
-
-		TraceLog(LOG_INFO, "Enemy dyied");
+		_spriteDeath.Reset();
 	}
 }
 
@@ -46,13 +48,13 @@ void Enemy::Update(float dt)
 		if (_retargetTimer < 0.0f) Retarget();
 
 		_transform.MoveForward(_speed * dt);
-		_sprite.Update(dt);
+		_spriteMove.Update(dt);
 
 		break;
 
 	case EnemyState::Dying:
-		_dyingTimer -= dt;
-		if (_dyingTimer < 0.0f) Deactivate();
+		_spriteDeath.Update(dt);
+		if (_spriteDeath.finished) Deactivate();
 	
 	default:
 		break;
@@ -66,6 +68,9 @@ void Enemy::Activate(Vector2 position)
 	_retargetTimer = 0.0f;
 
 	_state = EnemyState::Moving;
+
+	_spriteDeath.Reset();
+	_spriteMove.Reset();
 
 	health = 2;
 }
@@ -82,7 +87,21 @@ void Enemy::Deactivate()
 void Enemy::Draw()
 {
 	if (!_alive) return;
-	_sprite.Draw(_transform);
+
+	switch (_state)
+	{
+	case EnemyState::Moving:
+		_spriteMove.Draw(_transform);
+
+		break;
+
+	case EnemyState::Dying:
+		_spriteDeath.Draw(_transform);
+	
+	default:
+		break;
+	}
+
 	_collider.DrawDebug();
 }
 
