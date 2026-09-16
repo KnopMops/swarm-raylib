@@ -1,0 +1,14 @@
+{
+	"configurations": [
+		{
+			"name": "Win32",
+			"includePath": ["${workspaceFolder}/**", "E:/raylib/raylib/src"],
+			"defines": [],
+			"compilerPath": "E:/raylib/w64devkit/bin/g++.exe",
+			"cStandard": "c17",
+			"cppStandard": "c++17",
+			"intelliSenseMode": "gcc-x64"
+		}
+	],
+	"version": 4
+}
