@@ -80,12 +80,9 @@ int main() {
 		if (IsKeyPressed(KEY_F1)) 
 			GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
 
-		if (IsKeyDown(KEY_L)) 
+		if (IsKeyPressed(KEY_L)) 
 		{
-			enemies.Spawn({
-				RandomFloat(0.0f, GameConfig::MAP_W),
-				RandomFloat(0.0f, GameConfig::MAP_H)
-			});
+			enemies.SpawnBatch(10);
 		}
 
 		if (IsKeyPressed(KEY_F2)) 

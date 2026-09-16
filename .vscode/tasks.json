@@ -8,7 +8,7 @@
 			"args": [
 				"${workspaceFolder}/src/*.cpp",
 				"-o",
-				"${workspaceFolder}/build/main.exe",
+				"${workspaceFolder}/build/Swarm.exe",
 				"-I",
 				"E:/raylib/raylib/src",
 				"-L",
