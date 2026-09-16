@@ -30,6 +30,8 @@ public:
 	}
 
 private:
+	Vector2 pickSpawnPoint() const;
+
 	std::vector<std::unique_ptr<Enemy>> _pool;
 	Player* _player = nullptr;
 
