@@ -11,6 +11,8 @@ Enemy::Enemy()
 	_transform.rotation = 180.0f;
 
 	_collider.Init(30.0f, _transform);
+
+	health = 2;
 }
 
 void Enemy::Retarget()
@@ -35,12 +37,17 @@ void Enemy::Activate(Vector2 position)
 	_alive = true;
 	_transform.position = position;
 	_retargetTimer = 0.0f;
+
+	health = 2;
 }
 
 void Enemy::Deactivate()
 {
-	_alive = false;
-	_transform.position = GameConfig::OFFSCREEN_POSITION;
+	if (health > 0) health -= 1;
+	else {
+		_alive = false;
+		_transform.position = GameConfig::OFFSCREEN_POSITION;
+	}
 }
 
 void Enemy::Draw()

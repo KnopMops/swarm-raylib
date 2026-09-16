@@ -27,6 +27,7 @@ int main() {
 	SetTargetFPS(60);
 
 	DisableCursor();
+	SetExitKey(KEY_NULL);
 
 	RM::get().Load();
 
@@ -64,6 +65,17 @@ int main() {
 
 	while (!WindowShouldClose()) 
 	{
+
+		if (IsKeyPressed(KEY_ESCAPE))
+		{
+			if (IsCursorHidden()) EnableCursor();
+			else DisableCursor();
+		}
+
+		if (IsMouseButtonPressed(MOUSE_BUTTON_LEFT))
+		{
+			if (!IsCursorHidden()) DisableCursor();
+		}
 
 		if (IsKeyPressed(KEY_F1)) 
 			GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
@@ -138,6 +150,10 @@ int main() {
 			DrawText(TextFormat("PlayerXY: %.0f, %.0f", player.GetPosition().x, player.GetPosition().y), 12, GameConfig::BASE_H - 24, 20, LIME);
 			DrawText(TextFormat("Rotation: %.1f", GI::get().State().aimAngle), 512, GameConfig::BASE_H - 24, 20, LIME);
 			DrawText(TextFormat("Bullets: %d/%d, Enemies: %d/%d", bullets.CountAlive(), bullets.GetPoolTotal(), enemies.CountAlive(), enemies.GetPoolTotal()), 700, GameConfig::BASE_H - 24, 20, LIME);
+
+			const char* fpsText = TextFormat("FPS: %d", GetFPS());
+			int fpsWidth = MeasureText(fpsText, 20);
+			DrawText(fpsText, GameConfig::BASE_W - fpsWidth - 12, GameConfig::BASE_H - 24, 20, LIME);
 		}
 
 		EndTextureMode();

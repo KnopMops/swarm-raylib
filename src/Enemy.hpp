@@ -38,4 +38,6 @@ private:
 	void Retarget();
 
 	bool _alive = true;
+
+	int health = 2; 
 };
