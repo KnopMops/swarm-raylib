@@ -75,6 +75,11 @@ void EnemyManager::Draw()
 
 void EnemyManager::DeactivateAll()
 {
-	for (const auto& e : _pool)
-		if (e->IsAlive()) e->Deactivate();
+	_batchRemaining = 0;
+    _staggerTimer = 0.0f;
+
+	_pool.clear();
+
+	//for (const auto& e : _pool)
+	//	if (e->IsAlive()) e->Deactivate();
 }

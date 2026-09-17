@@ -41,4 +41,8 @@ namespace GameConfig
 
 	//
 	constexpr unsigned int WALKABLE_THRESHOLD = 240;
+
+	//
+	constexpr int WAVE_ENEMY_BASE = 8;
+	constexpr int WAVE_ENEMY_RAMP = 4;
 }
