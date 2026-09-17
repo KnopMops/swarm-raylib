@@ -48,7 +48,27 @@ bool Game::HandleInput()
 	if (IsKeyPressed(KEY_F1)) 
 		GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
 
+	if (_gameState == GameState::GameOver && IsKeyPressed(KEY_R))
+		restart();
+
+	if (_gameState == GameState::Playing && _enemies.IsBatchComplete() && IsKeyPressed(KEY_L)) 
+		{
+			_wave++;
+			_enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * _wave);
+		}
+
 	return false;
+}
+
+void Game::restart()
+{
+	_player.Reset();
+	_player.SetPosition(GameConfig::MapCenter());
+	_bullets.DeactivateAll();
+	_enemies.DeactivateAll();
+	_gameState = GameState::Playing;
+	_wave = 1;
+	startWave(1);
 }
 
 void Game::startWave(int n)
@@ -89,10 +109,7 @@ void Game::updateCollisions()
 
 void Game::updateWaves()
 {
-	if (_enemies.IsBatchComplete())
-	{
-		startWave(_wave + 1);
-	}
+	//
 }
 
 void Game::updateShooting()
@@ -121,11 +138,36 @@ void Game::updateCamera()
 
 void Game::Update(float dt)
 {
+	if (_gameState != GameState::Playing) return;
+
 	updateEntities(dt);
 	updateShooting();
 	updateCollisions();
 	updateWaves();
 	updateCamera();
+
+	if (_player.IsDead()) _gameState = GameState::GameOver;
+}
+
+void Game::drawGameOverOverlay(const Font& font)
+{
+			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
+		
+			const char* title = "ИГРА ОКОНЧЕНА";
+
+			Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
+
+			DrawTextEx(font, title,
+			{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f - 60.0f },
+			60.0f, 0.0f, RED);
+
+			const char* prompt = "Нажмите R чтобы возродится или M чтобы выйти в главное меню.";
+			Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
+			DrawTextEx(font, prompt,
+			{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f + 12.0f },
+			32.0f, 0.0f, WHITE);
 }
 
 void Game::drawDebug(const Font& font)
@@ -159,6 +201,27 @@ void Game::drawDebug(const Font& font)
 				20, 0.0f, LIME);
 
 		}
+
+	if (_gameState == GameState::Playing && _enemies.IsBatchComplete())
+		{
+			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
+
+			const char* title = "ВЫ УБИЛИ ВСЕХ ВРАГОВ!";
+
+			Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
+
+			DrawTextEx(font, title,
+			{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f - 60.0f },
+			60.0f, 0.0f, GREEN);
+
+			const char* prompt = "Чтобы начать новую волну нажмите L";
+			Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
+			DrawTextEx(font, prompt,
+			{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f + 12.0f },
+			32.0f, 0.0f, WHITE);
+		}
 }
 
 void Game::drawWorld()
@@ -187,6 +250,8 @@ void Game::Draw(RenderTexture2D& canvas)
 
 	drawWorld();
 	drawDebug(font);
+
+	if (_gameState == GameState::GameOver) drawGameOverOverlay(font);
 
 	EndTextureMode();
 }

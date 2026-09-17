@@ -9,6 +9,8 @@
 #include "EnemyManager.hpp"
 
 
+enum class GameState { Playing, GameOver };
+
 class Game
 {
 public:
@@ -24,12 +26,16 @@ private:
 	void drawWorld();
 	void drawDebug(const Font& font);
 
+	void drawGameOverOverlay(const Font& font);
+
 	void updateEntities(float dt);
 	void updateCamera();
 	void updateShooting();
 
 	void startWave(int n);
 	void updateWaves();
+
+	void restart();
 
 	void updateCollisions();
 
@@ -41,4 +47,6 @@ private:
 	EnemyManager _enemies;
 
 	int _wave = 1;
+
+	GameState _gameState = GameState::Playing;
 };
