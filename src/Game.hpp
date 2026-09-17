@@ -36,6 +36,7 @@ private:
 	void updateShooting();
 
 	void startWave(int n);
+	void spawnWaveEnemies();
 	void updateWaves(float dt);
 
 	void restart();
@@ -53,6 +54,9 @@ private:
 
 	int _wave = 1;
 	float _waveTime = 0.0f;
+	bool _wavePaused = false;    // между волнами: врагов нет, ждём L или таймера
+	bool _waveStarting = false;  // отсчёт WAVE_PAUSE перед стартом волны (таймер ещё не идёт)
+	float _pauseTimer = 0.0f;
 
 	GameState _gameState = GameState::Playing;
 };

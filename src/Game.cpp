@@ -47,17 +47,20 @@ bool Game::HandleInput()
 		if (!IsCursorHidden()) DisableCursor();
 	}
 
-	if (IsKeyPressed(KEY_F1)) 
+	if (IsKeyPressed(KEY_F1))
 		GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
 
 	if (_gameState == GameState::GameOver && IsKeyPressed(KEY_R))
 		restart();
 
-	if (_gameState == GameState::Playing && _enemies.IsBatchComplete() && IsKeyPressed(KEY_L)) 
-		{
-			_waveTime = GameConfig::WAVE_TIME_LIMIT;
-			startWave(_wave + 1);
-		}
+	// Пропустить паузу между волнами и запустить отсчёт перед следующей.
+	if (_gameState == GameState::Playing
+		&& _wavePaused
+		&& _enemies.IsBatchComplete()
+		&& IsKeyPressed(KEY_L))
+	{
+		startWave(_wave + 1);
+	}
 
 	return false;
 }
@@ -69,15 +72,23 @@ void Game::restart()
 	_bullets.DeactivateAll();
 	_enemies.DeactivateAll();
 	_gameState = GameState::Playing;
-	_wave = 1;
-	_waveTime = GameConfig::WAVE_TIME_LIMIT;
 	startWave(1);
 }
 
+// Запускает отсчёт WAVE_PAUSE перед фактическим началом волны.
+// Враги спавнятся только когда отсчёт закончится — до этого мир заморожен.
 void Game::startWave(int n)
 {
 	_wave = n;
 	_waveTime = GameConfig::WAVE_TIME_LIMIT;
+	_wavePaused = false;
+	_waveStarting = true;
+	_pauseTimer = 0.0f;
+}
+
+// Фактический спавн врагов — вызывается по окончании отсчёта.
+void Game::spawnWaveEnemies()
+{
 	_enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * _wave);
 }
 
@@ -113,11 +124,42 @@ void Game::updateCollisions()
 
 void Game::updateWaves(float dt)
 {
-	_waveTime -= dt;
-	if (_waveTime < 0.0f)
+	// 1) Пауза между волнами: врагов нет, ждём L или таймер до автозапуска.
+	if (_wavePaused)
 	{
-		_gameState = GameState::GameOver;
+		_pauseTimer += dt;
+		if (_pauseTimer >= GameConfig::WAVE_PAUSE)
+			startWave(_wave + 1);
 		return;
+	}
+
+	// 2) Отсчёт перед волной: время волны ещё не тикает, враги ещё не спавнились.
+	if (_waveStarting)
+	{
+		_pauseTimer += dt;
+		if (_pauseTimer >= GameConfig::WAVE_PAUSE)
+		{
+			_waveStarting = false;
+			_pauseTimer = 0.0f;
+			spawnWaveEnemies();
+		}
+		return;
+	}
+
+	// 3) Волна идёт. Если враги закончились — уходим в паузу между волнами.
+	if (_enemies.IsBatchComplete())
+	{
+		_wavePaused = true;
+		_pauseTimer = 0.0f;
+		return;
+	}
+
+	// 4) Волна идёт и враги живы — тикает таймер волны.
+	_waveTime -= dt;
+	if (_waveTime <= 0.0f)
+	{
+		_waveTime = 0.0f;
+		_gameState = GameState::GameOver;
 	}
 }
 
@@ -149,11 +191,16 @@ void Game::Update(float dt)
 {
 	if (_gameState != GameState::Playing) return;
 
-	if (_enemies.IsBatchComplete()) return;
+	// Во время паузы и отсчёта мир заморожен: игрок, враги и пули стоят.
+	const bool frozen = _wavePaused || _waveStarting;
 
-	updateEntities(dt);
-	updateShooting();
-	updateCollisions();
+	if (!frozen)
+	{
+		updateEntities(dt);
+		updateShooting();
+		updateCollisions();
+	}
+
 	updateWaves(dt);
 	updateCamera();
 
@@ -162,85 +209,125 @@ void Game::Update(float dt)
 
 void Game::drawGameOverOverlay(const Font& font)
 {
-			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
-		
-			const char* title = "ИГРА ОКОНЧЕНА";
+	DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
 
-			Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
+	const char* title = "ИГРА ОКОНЧЕНА";
 
-			DrawTextEx(font, title,
-			{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
-			GameConfig::BASE_H * 0.5f - 60.0f },
-			60.0f, 0.0f, RED);
+	Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
 
-			const char* prompt = "Нажмите R чтобы возродится или M чтобы выйти в главное меню.";
-			Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
-			DrawTextEx(font, prompt,
-			{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
-			GameConfig::BASE_H * 0.5f + 12.0f },
-			32.0f, 0.0f, WHITE);
+	DrawTextEx(font, title,
+	{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
+	GameConfig::BASE_H * 0.5f - 60.0f },
+	60.0f, 0.0f, RED);
+
+	const char* prompt = "Нажмите R чтобы возродится или M чтобы выйти в главное меню.";
+	Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
+	DrawTextEx(font, prompt,
+	{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
+	GameConfig::BASE_H * 0.5f + 12.0f },
+	32.0f, 0.0f, WHITE);
 }
 
 void Game::drawDebug(const Font& font)
 {
 	if (GameConfig::SHOW_DEBUG)
-		{
-			DrawRectangle(0, GameConfig::BASE_H - 32, GameConfig::BASE_W, 32,
-						ColorAlpha(DARKBLUE, 0.6f));
+	{
+		DrawRectangle(0, GameConfig::BASE_H - 32, GameConfig::BASE_W, 32,
+					ColorAlpha(DARKBLUE, 0.6f));
 
-			DrawTextEx(font,
-				TextFormat("XY камеры: %.0f, %.0f", _camera.target.x, _camera.target.y),
-				{ 12, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
+		DrawTextEx(font,
+			TextFormat("XY камеры: %.0f, %.0f", _camera.target.x, _camera.target.y),
+			{ 12, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
 
-			DrawTextEx(font,
-				TextFormat("Игрок: XY: %.0f, %.0f, Скорость: %.0f",
-						_player.GetPosition().x, _player.GetPosition().y,
-						_player.GetPlayerSpeed()),
-				{ 300, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
+		DrawTextEx(font,
+			TextFormat("Игрок: XY: %.0f, %.0f, Скорость: %.0f",
+					_player.GetPosition().x, _player.GetPosition().y,
+					_player.GetPlayerSpeed()),
+			{ 300, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
 
-			DrawTextEx(font,
-				TextFormat("Волна: %d, Здоровье: %d/%d, Патроны: %d/%d, Враги: %d/%d", _wave,
-						_player.GetHealth(), _player.GetMaxHealth(),
-						_bullets.CountAlive(), _bullets.GetPoolTotal(),
-						_enemies.CountAlive(), _enemies.GetPoolTotal()),
-				{ 600, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
+		DrawTextEx(font,
+			TextFormat("Волна: %d, Здоровье: %d/%d, Патроны: %d/%d, Враги: %d/%d", _wave,
+					_player.GetHealth(), _player.GetMaxHealth(),
+					_bullets.CountAlive(), _bullets.GetPoolTotal(),
+					_enemies.CountAlive(), _enemies.GetPoolTotal()),
+			{ 600, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
 
-			const char* fpsText = TextFormat("FPS: %d", GetFPS());
-			Vector2 fpsSize = MeasureTextEx(font, fpsText, 20, 0.0f);
-			DrawTextEx(font, fpsText,
-				{ GameConfig::BASE_W - fpsSize.x - 12, GameConfig::BASE_H - 24 },
-				20, 0.0f, LIME);
-
-		}
+		const char* fpsText = TextFormat("FPS: %d", GetFPS());
+		Vector2 fpsSize = MeasureTextEx(font, fpsText, 20, 0.0f);
+		DrawTextEx(font, fpsText,
+			{ GameConfig::BASE_W - fpsSize.x - 12, GameConfig::BASE_H - 24 },
+			20, 0.0f, LIME);
+	}
 }
 
 void Game::drawHud(const Font& font)
 {
-	if (_gameState == GameState::Playing && _enemies.IsBatchComplete())
+	const bool playing = (_gameState == GameState::Playing);
+
+	// --- Оверлей паузы МЕЖДУ волнами ---
+	if (playing && _wavePaused)
 	{
 		DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
 
 		const char* title = "ВЫ УБИЛИ ВСЕХ ВРАГОВ!";
-
 		Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
-
 		DrawTextEx(font, title,
 		{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
-		GameConfig::BASE_H * 0.5f - 60.0f },
+		  GameConfig::BASE_H * 0.5f - 80.0f },
 		60.0f, 0.0f, GREEN);
 
-		const char* prompt = "Чтобы начать новую волну нажмите L";
-		Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
-		DrawTextEx(font, prompt,
-		{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
-		GameConfig::BASE_H * 0.5f + 12.0f },
+		float remain = GameConfig::WAVE_PAUSE - _pauseTimer;
+		if (remain < 0.0f) remain = 0.0f;
+
+		const char* next = TextFormat("Следующая волна начнётся через %.1f с", remain);
+		Vector2 nextSize = MeasureTextEx(font, next, 32.0f, 0.0f);
+		DrawTextEx(font, next,
+		{ (GameConfig::BASE_W - nextSize.x) * 0.5f,
+		  GameConfig::BASE_H * 0.5f + 12.0f },
 		32.0f, 0.0f, WHITE);
+
+		const char* hint = "Нажмите L чтобы начать сейчас";
+		Vector2 hintSize = MeasureTextEx(font, hint, 24.0f, 0.0f);
+		DrawTextEx(font, hint,
+		{ (GameConfig::BASE_W - hintSize.x) * 0.5f,
+		  GameConfig::BASE_H * 0.5f + 56.0f },
+		24.0f, 0.0f, GRAY);
 	}
 
-	// Time of wave (text)
-	if (_gameState == GameState::Playing)
+	// --- Оверлей отсчёта ПЕРЕД волной (таймер волны ещё не идёт) ---
+	if (playing && _waveStarting)
 	{
-		// Форматируем оставшееся время как M:SS
+		DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.5f));
+
+		float remain = GameConfig::WAVE_PAUSE - _pauseTimer;
+		if (remain < 0.0f) remain = 0.0f;
+
+		const char* title = TextFormat("ВОЛНА %d", _wave);
+		Vector2 titleSize = MeasureTextEx(font, title, 80.0f, 0.0f);
+		DrawTextEx(font, title,
+		{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
+		  GameConfig::BASE_H * 0.5f - 80.0f },
+		80.0f, 0.0f, YELLOW);
+
+		// Крупный отсчёт по центру
+		const char* countdown = TextFormat("%.1f", remain);
+		Vector2 cdSize = MeasureTextEx(font, countdown, 72.0f, 0.0f);
+		DrawTextEx(font, countdown,
+		{ (GameConfig::BASE_W - cdSize.x) * 0.5f,
+		  GameConfig::BASE_H * 0.5f },
+		72.0f, 0.0f, WHITE);
+
+		const char* hint = "Приготовьтесь!";
+		Vector2 hintSize = MeasureTextEx(font, hint, 28.0f, 0.0f);
+		DrawTextEx(font, hint,
+		{ (GameConfig::BASE_W - hintSize.x) * 0.5f,
+		  GameConfig::BASE_H * 0.5f + 80.0f },
+		28.0f, 0.0f, LIGHTGRAY);
+	}
+
+	// --- Таймер волны: только когда волна реально идёт ---
+	if (playing && !_wavePaused && !_waveStarting)
+	{
 		int totalSeconds = (int)_waveTime;
 		if (totalSeconds < 0) totalSeconds = 0;
 		int minutes = totalSeconds / 60;
@@ -250,16 +337,9 @@ void Game::drawHud(const Font& font)
 
 		const float fontSize = 28.0f;
 		Vector2 timeSize = MeasureTextEx(font, timeText, fontSize, 0.0f);
+		Vector2 timePos = { (GameConfig::BASE_W - timeSize.x) * 0.5f, 12.0f };
 
-		// Позиция: сверху по центру
-		Vector2 timePos = {
-			(GameConfig::BASE_W - timeSize.x) * 0.5f,
-			12.0f
-		};
-
-		// Красный цвет, когда времени осталось мало (последние 10 секунд)
 		Color timeColor = (_waveTime <= 10.0f) ? RED : WHITE;
-
 		DrawTextEx(font, timeText, timePos, fontSize, 0.0f, timeColor);
 	}
 }
@@ -276,7 +356,7 @@ void Game::drawWorld()
 	_enemies.Draw();
 
 	if (GameConfig::SHOW_DEBUG)
-        _collisionMap.DrawDebug();
+		_collisionMap.DrawDebug();
 
 	EndMode2D();
 }

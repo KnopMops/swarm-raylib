@@ -3,13 +3,14 @@
 
 #include "ResourceManager.hpp"
 
-void CollisionMap::Init(const std::string& name) 
+void CollisionMap::Init(const std::string& name)
 {
 	_img = &RM::get().GetImage(name);
 
 	if (!_img || !_img->data) return;
 
-    // Бинарная debug-маска: пиксель-в-пиксель совпадает с IsWalkable
+    // Debug-маска: рисуем только НЕпроходимые пиксели (стены) синим.
+    // Проходимые остаются прозрачными — фон карты виден как есть.
     Image dbg = GenImageColor(_img->width, _img->height, BLANK);
 
     for (int y = 0; y < _img->height; ++y)
@@ -19,15 +20,14 @@ void CollisionMap::Init(const std::string& name)
 			Color c = GetImageColor(*_img, x, y);
 			bool walk = c.r >= GameConfig::WALKABLE_THRESHOLD;
 
-			if (walk)
-				ImageDrawPixel(&dbg, x, y, Color{ 255, 255, 255, 60 });   // белая панель, alpha = 60/255
-			else
-				ImageDrawPixel(&dbg, x, y, Color{  60, 120, 255, 110 });  // синяя панель, alpha = 110/255
+			if (!walk)
+				ImageDrawPixel(&dbg, x, y, Color{ 60, 120, 255, 110 }); // стены — синие
+			// walkable — оставляем BLANK (ничего не рисуем)
 		}
 	}
 
     _debugTex = LoadTextureFromImage(dbg);
-    SetTextureFilter(_debugTex, TEXTURE_FILTER_POINT); // без сглаживания!
+    SetTextureFilter(_debugTex, TEXTURE_FILTER_POINT);
     UnloadImage(dbg);
 }
 
