@@ -20,6 +20,8 @@ public:
 	void Draw();
 	void DeactivateAll();
 
+	bool IsBatchComplete() const { return _batchRemaining == 0 && CountAlive() == 0; };
+
 	const std::vector<std::unique_ptr<Enemy>>& GetPool() const { return _pool; };
 
 	int GetPoolTotal() const { return (int)_pool.size(); };

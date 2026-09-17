@@ -88,7 +88,7 @@ int main() {
 		if (IsKeyPressed(KEY_F1)) 
 			GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
 
-		if (gameState == GameState::Playing && enemies.CountAlive() == 0 && IsKeyPressed(KEY_L)) 
+		if (gameState == GameState::Playing && enemies.IsBatchComplete() && IsKeyPressed(KEY_L)) 
 		{
 			wave++;
 			enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
@@ -223,7 +223,7 @@ int main() {
 			32.0f, 0.0f, WHITE);
 		}
 
-		if (gameState == GameState::Playing && enemies.CountAlive() == 0)
+		if (gameState == GameState::Playing && enemies.IsBatchComplete())
 		{
 			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
 
