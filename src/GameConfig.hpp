@@ -18,9 +18,18 @@ namespace GameConfig
 	constexpr int BASE_W = 1280;
 	constexpr int BASE_H = 720;
 
+	constexpr float HALF_BASE_W = BASE_W * 0.5f;
+	constexpr float HALF_BASE_H = BASE_H * 0.5f;
+
+	
 	//
 	inline float MAP_W = 0.0f;
 	inline float MAP_H = 0.0f;
+	
+	inline Vector2 MapCenter()
+	{
+		return { MAP_W * 0.5f, MAP_H * 0.5f };
+	}
 
 	inline bool IsOutsideMap(Vector2 pos)
 	{
