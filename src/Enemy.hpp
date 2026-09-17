@@ -22,6 +22,8 @@ public:
 	void SetPosition(Vector2 position);
 	void SetPlayer(const Player *player);
 
+	Vector2 GetPosition() const { return _transform.position; };
+
 	bool IsAlive() const { return _alive; }
 	void Deactivate();
 

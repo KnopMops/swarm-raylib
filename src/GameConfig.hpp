@@ -54,4 +54,8 @@ namespace GameConfig
 	//
 	constexpr int WAVE_ENEMY_BASE = 8;
 	constexpr int WAVE_ENEMY_RAMP = 4;
+
+	//
+	constexpr int MINIMAP_SIZE = 150;
+	constexpr int MINIMAP_PAD = 10;
 }

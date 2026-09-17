@@ -8,6 +8,8 @@
 #include "BulletManager.hpp"
 #include "EnemyManager.hpp"
 
+#include "Minimap.hpp"
+
 
 enum class GameState { Playing, GameOver };
 
@@ -45,6 +47,8 @@ private:
 
 	BulletManager _bullets;
 	EnemyManager _enemies;
+
+	Minimap _minimap;
 
 	int _wave = 1;
 
