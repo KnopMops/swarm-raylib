@@ -104,6 +104,8 @@ int main() {
 			bullets.DeactivateAll();
 			enemies.DeactivateAll();
 			gameState = GameState::Playing;
+			wave = 1;
+			enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
 		}
 
 		GI::get().Update();
