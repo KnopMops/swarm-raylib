@@ -55,8 +55,8 @@ bool Game::HandleInput()
 
 	if (_gameState == GameState::Playing && _enemies.IsBatchComplete() && IsKeyPressed(KEY_L)) 
 		{
-			_wave++;
-			_enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * _wave);
+			_waveTime = GameConfig::WAVE_TIME_LIMIT;
+			startWave(_wave + 1);
 		}
 
 	return false;
@@ -70,12 +70,14 @@ void Game::restart()
 	_enemies.DeactivateAll();
 	_gameState = GameState::Playing;
 	_wave = 1;
+	_waveTime = GameConfig::WAVE_TIME_LIMIT;
 	startWave(1);
 }
 
 void Game::startWave(int n)
 {
 	_wave = n;
+	_waveTime = GameConfig::WAVE_TIME_LIMIT;
 	_enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * _wave);
 }
 
@@ -109,9 +111,14 @@ void Game::updateCollisions()
 	}
 }
 
-void Game::updateWaves()
+void Game::updateWaves(float dt)
 {
-	//
+	_waveTime -= dt;
+	if (_waveTime < 0.0f)
+	{
+		_gameState = GameState::GameOver;
+		return;
+	}
 }
 
 void Game::updateShooting()
@@ -142,10 +149,12 @@ void Game::Update(float dt)
 {
 	if (_gameState != GameState::Playing) return;
 
+	if (_enemies.IsBatchComplete()) return;
+
 	updateEntities(dt);
 	updateShooting();
 	updateCollisions();
-	updateWaves();
+	updateWaves(dt);
 	updateCamera();
 
 	if (_player.IsDead()) _gameState = GameState::GameOver;
@@ -203,27 +212,56 @@ void Game::drawDebug(const Font& font)
 				20, 0.0f, LIME);
 
 		}
+}
 
+void Game::drawHud(const Font& font)
+{
 	if (_gameState == GameState::Playing && _enemies.IsBatchComplete())
-		{
-			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
+	{
+		DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
 
-			const char* title = "ВЫ УБИЛИ ВСЕХ ВРАГОВ!";
+		const char* title = "ВЫ УБИЛИ ВСЕХ ВРАГОВ!";
 
-			Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
+		Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
 
-			DrawTextEx(font, title,
-			{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
-			GameConfig::BASE_H * 0.5f - 60.0f },
-			60.0f, 0.0f, GREEN);
+		DrawTextEx(font, title,
+		{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
+		GameConfig::BASE_H * 0.5f - 60.0f },
+		60.0f, 0.0f, GREEN);
 
-			const char* prompt = "Чтобы начать новую волну нажмите L";
-			Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
-			DrawTextEx(font, prompt,
-			{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
-			GameConfig::BASE_H * 0.5f + 12.0f },
-			32.0f, 0.0f, WHITE);
-		}
+		const char* prompt = "Чтобы начать новую волну нажмите L";
+		Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
+		DrawTextEx(font, prompt,
+		{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
+		GameConfig::BASE_H * 0.5f + 12.0f },
+		32.0f, 0.0f, WHITE);
+	}
+
+	// Time of wave (text)
+	if (_gameState == GameState::Playing)
+	{
+		// Форматируем оставшееся время как M:SS
+		int totalSeconds = (int)_waveTime;
+		if (totalSeconds < 0) totalSeconds = 0;
+		int minutes = totalSeconds / 60;
+		int seconds = totalSeconds % 60;
+
+		const char* timeText = TextFormat("Волна %d: %d:%02d", _wave, minutes, seconds);
+
+		const float fontSize = 28.0f;
+		Vector2 timeSize = MeasureTextEx(font, timeText, fontSize, 0.0f);
+
+		// Позиция: сверху по центру
+		Vector2 timePos = {
+			(GameConfig::BASE_W - timeSize.x) * 0.5f,
+			12.0f
+		};
+
+		// Красный цвет, когда времени осталось мало (последние 10 секунд)
+		Color timeColor = (_waveTime <= 10.0f) ? RED : WHITE;
+
+		DrawTextEx(font, timeText, timePos, fontSize, 0.0f, timeColor);
+	}
 }
 
 void Game::drawWorld()
@@ -252,6 +290,7 @@ void Game::Draw(RenderTexture2D& canvas)
 
 	drawWorld();
 	drawDebug(font);
+	drawHud(font);
 
 	_minimap.Draw();
 
