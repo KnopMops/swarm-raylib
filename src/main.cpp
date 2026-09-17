@@ -63,9 +63,11 @@ int main() {
 
 	BulletManager bullets;
 
+	int wave = 1;
+
 	EnemyManager enemies;
 	enemies.Init(&player);
-	enemies.Spawn({ GameConfig::MAP_W * 0.5f + 200.0f, GameConfig::MAP_H * 0.5f });
+	enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
 
 	GameState gameState = GameState::Playing;
 
@@ -86,9 +88,10 @@ int main() {
 		if (IsKeyPressed(KEY_F1)) 
 			GameConfig::SHOW_DEBUG = !GameConfig::SHOW_DEBUG;
 
-		if (IsKeyPressed(KEY_L)) 
+		if (gameState == GameState::Playing && enemies.CountAlive() == 0 && IsKeyPressed(KEY_L)) 
 		{
-			enemies.SpawnBatch(10);
+			wave++;
+			enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * wave);
 		}
 
 		if (IsKeyPressed(KEY_F2)) 
@@ -185,7 +188,7 @@ int main() {
 				{ 300, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
 
 			DrawTextEx(font,
-				TextFormat("Здоровье: %d/%d, Патроны: %d/%d, Враги: %d/%d",
+				TextFormat("Волна: %d, Здоровье: %d/%d, Патроны: %d/%d, Враги: %d/%d", wave,
 						player.GetHealth(), player.GetMaxHealth(),
 						bullets.CountAlive(), bullets.GetPoolTotal(),
 						enemies.CountAlive(), enemies.GetPoolTotal()),
@@ -213,6 +216,27 @@ int main() {
 			60.0f, 0.0f, RED);
 
 			const char* prompt = "Нажмите R чтобы возродится или M чтобы выйти в главное меню.";
+			Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
+			DrawTextEx(font, prompt,
+			{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f + 12.0f },
+			32.0f, 0.0f, WHITE);
+		}
+
+		if (gameState == GameState::Playing && enemies.CountAlive() == 0)
+		{
+			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
+
+			const char* title = "ВЫ УБИЛИ ВСЕХ ВРАГОВ!";
+
+			Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
+
+			DrawTextEx(font, title,
+			{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
+			GameConfig::BASE_H * 0.5f - 60.0f },
+			60.0f, 0.0f, GREEN);
+
+			const char* prompt = "Чтобы начать новую волну нажмите L";
 			Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
 			DrawTextEx(font, prompt,
 			{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
