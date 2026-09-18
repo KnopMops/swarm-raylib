@@ -3,6 +3,8 @@
 #include "raylib.h"
 #include "cmath"
 
+#include "GameConfig.hpp"
+
 
 inline Vector2 Direction(float angleDeg)
 {
