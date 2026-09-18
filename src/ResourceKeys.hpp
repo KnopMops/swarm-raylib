@@ -14,6 +14,11 @@ namespace RK
 
 	constexpr const char* HEALTH_POTION = "healthPotion";
 
+	constexpr const char* BOOK_1 = "book1";
+	constexpr const char* BOOK_2 = "book2";
+	constexpr const char* BOOK_3 = "book3";
+	constexpr const char* BOOK_4 = "book4";
+
 	inline constexpr const char* FONT_MAIN = "fonts/Roboto-Regular.ttf";
 
 	inline constexpr const char* FONT_MAIN_PATH = "resources/fonts/Roboto-Regular.ttf";

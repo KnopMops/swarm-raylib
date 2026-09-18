@@ -1,6 +1,7 @@
 #pragma once
 
 #include "raylib.h"
+#include "array"
 
 namespace GameConfig
 {
@@ -63,4 +64,6 @@ namespace GameConfig
 	//
 	constexpr int MINIMAP_SIZE = 150;
 	constexpr int MINIMAP_PAD = 10;
+
+	constexpr std::array<int, 3> WAVE_BOOK_COUNTS = { 3, 4, 5 };
 }

@@ -8,6 +8,7 @@
 #include "BulletManager.hpp"
 #include "EnemyManager.hpp"
 #include "HealthPotionManager.hpp"
+#include "BookManager.hpp"
 
 #include "Minimap.hpp"
 #include "DebugOverlay.hpp"
@@ -52,6 +53,7 @@ private:
 	BulletManager _bullets;
 	EnemyManager _enemies;
 	HealthPotionManager _healthPotions;
+	BookManager _books;
 
 	Minimap _minimap;
 	DebugOverlay _debugOverlay;

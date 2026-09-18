@@ -15,7 +15,7 @@ Game::Game() : _player(RK::PLAYER)
 	GameConfig::MAP_H = (float)background.height;
 	GameConfig::MAP_W = (float)background.width;
 
-	_minimap.Init(_player, _enemies);
+	_minimap.Init(_player, _enemies, _books, _healthPotions);
 	_debugOverlay.Init(_player, _bullets, _enemies, _camera);
 
 	_collisionMap.Init(RK::GAME_BG_COLLISION);
@@ -28,6 +28,8 @@ Game::Game() : _player(RK::PLAYER)
 	_camera.target = GameConfig::MapCenter();
 
 	_enemies.Init(&_player);
+	_books.Init(&_player);
+
 	startWave(_wave);
 
 	_lifeTex = &RM::get().GetTexture(RK::PLAYER);
@@ -79,6 +81,7 @@ void Game::restart()
 	_bullets.DeactivateAll();
 	_enemies.DeactivateAll();
 	_healthPotions.DeactivateAll();
+	_books.DeactivateAll();
 
 	_gameState = GameState::Playing;
 	startWave(1);
@@ -96,6 +99,10 @@ void Game::startWave(int n)
 	_waveStarting = true;
 	_healthPotions.DeactivateAll();
 	_pauseTimer = 0.0f;
+
+	int idx = std::clamp(_wave - 1, 0, (int)GameConfig::WAVE_BOOK_COUNTS.size() - 1);
+
+	_books.SpawnBatch(GameConfig::WAVE_BOOK_COUNTS[idx]);
 }
 
 void Game::spawnWaveEnemies()
@@ -472,6 +479,7 @@ void Game::drawWorld()
 	_bullets.Draw();
 	_enemies.Draw();
 	_healthPotions.Draw();
+	_books.Draw();
 
 	if (GameConfig::SHOW_DEBUG)
 		_collisionMap.DrawDebug();
