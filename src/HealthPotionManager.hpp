@@ -5,9 +5,6 @@
 
 #include "raylib.h"
 
-#include "vector"
-#include "memory"
-
 
 class HealthPotionManager : public PoolManager<HealthPotion>
 {

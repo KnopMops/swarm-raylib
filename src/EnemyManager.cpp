@@ -20,8 +20,8 @@ Vector2 EnemyManager::pickSpawnPoint() const
 	Vector2 candidate;
 
 	do {
-		candidate.x = RandomFloat(0.0f, GameConfig::MAP_W);
-		candidate.y = RandomFloat(0.0f, GameConfig::MAP_H);
+		candidate.x = RandomFloat(GameConfig::SPAWN_EDGE_MARGIN, GameConfig::MAP_W - GameConfig::SPAWN_EDGE_MARGIN);
+		candidate.y = RandomFloat(GameConfig::SPAWN_EDGE_MARGIN, GameConfig::MAP_H - GameConfig::SPAWN_EDGE_MARGIN);
 	} while (Vector2DistanceSqr(candidate, playerPos) < MIN_DIST_SQ);
 
 	return candidate;

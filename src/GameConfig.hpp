@@ -13,6 +13,7 @@ namespace GameConfig
 
 	//
 	constexpr float BOUNDS_MARGIN = 100.0f;
+	constexpr float SPAWN_EDGE_MARGIN = 100.0f;
 
 	//
 	constexpr int BASE_W = 1280;
