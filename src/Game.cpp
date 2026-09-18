@@ -28,6 +28,10 @@ Game::Game() : _player(RK::PLAYER)
 
 	_enemies.Init(&_player);
 	startWave(_wave);
+
+	_healthPotions.Spawn({ 400.0f, 400.0f });
+	_healthPotions.Spawn({ 650.0f, 400.0f });
+	_healthPotions.Spawn({ 900.0f, 400.0f });
 };
 
 Game::~Game() {};
@@ -53,7 +57,6 @@ bool Game::HandleInput()
 	if (_gameState == GameState::GameOver && IsKeyPressed(KEY_R))
 		restart();
 
-	// Пропустить паузу между волнами и запустить отсчёт перед следующей.
 	if (_gameState == GameState::Playing
 		&& _wavePaused
 		&& _enemies.IsBatchComplete()
@@ -71,12 +74,11 @@ void Game::restart()
 	_player.SetPosition(GameConfig::MapCenter());
 	_bullets.DeactivateAll();
 	_enemies.DeactivateAll();
+	_healthPotions.DeactivateAll();
 	_gameState = GameState::Playing;
 	startWave(1);
 }
 
-// Запускает отсчёт WAVE_PAUSE перед фактическим началом волны.
-// Враги спавнятся только когда отсчёт закончится — до этого мир заморожен.
 void Game::startWave(int n)
 {
 	_wave = n;
@@ -86,7 +88,6 @@ void Game::startWave(int n)
 	_pauseTimer = 0.0f;
 }
 
-// Фактический спавн врагов — вызывается по окончании отсчёта.
 void Game::spawnWaveEnemies()
 {
 	_enemies.SpawnBatch(GameConfig::WAVE_ENEMY_BASE + GameConfig::WAVE_ENEMY_RAMP * _wave);
@@ -124,7 +125,6 @@ void Game::updateCollisions()
 
 void Game::updateWaves(float dt)
 {
-	// 1) Пауза между волнами: врагов нет, ждём L или таймер до автозапуска.
 	if (_wavePaused)
 	{
 		_pauseTimer += dt;
@@ -133,7 +133,6 @@ void Game::updateWaves(float dt)
 		return;
 	}
 
-	// 2) Отсчёт перед волной: время волны ещё не тикает, враги ещё не спавнились.
 	if (_waveStarting)
 	{
 		_pauseTimer += dt;
@@ -146,7 +145,6 @@ void Game::updateWaves(float dt)
 		return;
 	}
 
-	// 3) Волна идёт. Если враги закончились — уходим в паузу между волнами.
 	if (_enemies.IsBatchComplete())
 	{
 		_wavePaused = true;
@@ -154,7 +152,6 @@ void Game::updateWaves(float dt)
 		return;
 	}
 
-	// 4) Волна идёт и враги живы — тикает таймер волны.
 	_waveTime -= dt;
 	if (_waveTime <= 0.0f)
 	{
@@ -178,6 +175,7 @@ void Game::updateEntities(float dt)
 	_player.Update(dt);
 	_bullets.Update(dt);
 	_enemies.Update(dt);
+	_healthPotions.Update(dt);
 }
 
 void Game::updateCamera()
@@ -191,7 +189,6 @@ void Game::Update(float dt)
 {
 	if (_gameState != GameState::Playing) return;
 
-	// Во время паузы и отсчёта мир заморожен: игрок, враги и пули стоят.
 	const bool frozen = _wavePaused || _waveStarting;
 
 	if (!frozen)
@@ -264,7 +261,6 @@ void Game::drawHud(const Font& font)
 {
 	const bool playing = (_gameState == GameState::Playing);
 
-	// --- Оверлей паузы МЕЖДУ волнами ---
 	if (playing && _wavePaused)
 	{
 		DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
@@ -294,7 +290,6 @@ void Game::drawHud(const Font& font)
 		24.0f, 0.0f, GRAY);
 	}
 
-	// --- Оверлей отсчёта ПЕРЕД волной (таймер волны ещё не идёт) ---
 	if (playing && _waveStarting)
 	{
 		DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.5f));
@@ -309,7 +304,6 @@ void Game::drawHud(const Font& font)
 		  GameConfig::BASE_H * 0.5f - 80.0f },
 		80.0f, 0.0f, YELLOW);
 
-		// Крупный отсчёт по центру
 		const char* countdown = TextFormat("%.1f", remain);
 		Vector2 cdSize = MeasureTextEx(font, countdown, 72.0f, 0.0f);
 		DrawTextEx(font, countdown,
@@ -325,7 +319,6 @@ void Game::drawHud(const Font& font)
 		28.0f, 0.0f, LIGHTGRAY);
 	}
 
-	// --- Таймер волны: только когда волна реально идёт ---
 	if (playing && !_wavePaused && !_waveStarting)
 	{
 		int totalSeconds = (int)_waveTime;
@@ -354,6 +347,7 @@ void Game::drawWorld()
 	_player.Draw();
 	_bullets.Draw();
 	_enemies.Draw();
+	_healthPotions.Draw();
 
 	if (GameConfig::SHOW_DEBUG)
 		_collisionMap.DrawDebug();

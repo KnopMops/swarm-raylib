@@ -7,6 +7,7 @@
 
 #include "BulletManager.hpp"
 #include "EnemyManager.hpp"
+#include "HealthPotionManager.hpp"
 
 #include "Minimap.hpp"
 
@@ -49,13 +50,14 @@ private:
 
 	BulletManager _bullets;
 	EnemyManager _enemies;
+	HealthPotionManager _healthPotions;
 
 	Minimap _minimap;
 
 	int _wave = 1;
 	float _waveTime = 0.0f;
-	bool _wavePaused = false;    // между волнами: врагов нет, ждём L или таймера
-	bool _waveStarting = false;  // отсчёт WAVE_PAUSE перед стартом волны (таймер ещё не идёт)
+	bool _wavePaused = false;
+	bool _waveStarting = false;
 	float _pauseTimer = 0.0f;
 
 	GameState _gameState = GameState::Playing;

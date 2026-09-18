@@ -15,14 +15,14 @@ Bullet::Bullet()
 	_transform.scale = 0.6f;
 
 	_collider.Init(6.0f, _transform);
-};
+}
 
-void Bullet::Activate(Vector2 pos, float angleDeg, float speed)
+void Bullet::Activate(Vector2 pos, float angleDeg)
 {
 	_alive = true;
 	_transform.position = pos;
 	_transform.rotation = angleDeg;
-	_velocity = Direction(angleDeg) * speed;
+	_velocity = Direction(angleDeg) * _speed;
 	_sprite.Reset();
 }
 

@@ -64,6 +64,8 @@ void ResourceManager::Load()
 	loadTexture(RK::COCKROACH_MOVE, "cockroach-move.png");
 	loadTexture(RK::COCKROACH_DEATH, "cockroach-death.png");
 
+	loadTexture(RK::HEALTH_POTION, "healthPotion.png");
+
 	loadImage(RK::GAME_BG_COLLISION, "gameBgCollision.png");
 
 	TraceLog(LOG_INFO, "ResourceManager: Loaded %d images", (int)_images.size());

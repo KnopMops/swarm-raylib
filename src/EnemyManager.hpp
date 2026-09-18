@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Enemy.hpp"
+#include "PoolManager.hpp"
 
 #include "vector"
 #include "memory"
@@ -8,33 +9,21 @@
 
 class Player;
 
-class EnemyManager
+class EnemyManager : public PoolManager<Enemy>
 {
 public:
 	void Init(Player *player);
 
-	void Spawn(Vector2 pos);
 	void SpawnBatch(int count);
 
-	void Update(float dt);
-	void Draw();
-	void DeactivateAll();
+	void Update(float dt) override;
 
 	bool IsBatchComplete() const { return _batchRemaining == 0 && CountAlive() == 0; };
 
-	const std::vector<std::unique_ptr<Enemy>>& GetPool() const { return _pool; };
-
-	int GetPoolTotal() const { return (int)_pool.size(); };
-	int CountAlive() const {
-		int n = 0;
-		for (const auto& b : _pool) if (b->IsAlive()) n++;
-		return n;
-	}
-
 private:
+	void Spawn(Vector2 pos);
 	Vector2 pickSpawnPoint() const;
 
-	std::vector<std::unique_ptr<Enemy>> _pool;
 	Player* _player = nullptr;
 
 	float _staggerInterval = 0.15f;

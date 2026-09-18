@@ -35,19 +35,9 @@ void EnemyManager::SpawnBatch(int count)
 
 void EnemyManager::Spawn(Vector2 pos)
 {
-	for (auto& enemy : _pool)
-	{
-		if (!enemy->IsAlive())
-		{
-			enemy->Activate(pos);
-			return;
-		}
-	}
-
-	auto enemy = std::make_unique<Enemy>();
+	auto* enemy = spawnInPool();
 	enemy->Activate(pos);
 	enemy->SetPlayer(_player);
-	_pool.push_back(std::move(enemy));
 }
 
 void EnemyManager::Update(float dt)
@@ -65,21 +55,5 @@ void EnemyManager::Update(float dt)
 		}
 	}
 
-	for (const auto& e : _pool) e->Update(dt);
-}
-
-void EnemyManager::Draw()
-{
-	for (const auto& e : _pool) e->Draw();
-}
-
-void EnemyManager::DeactivateAll()
-{
-	_batchRemaining = 0;
-    _staggerTimer = 0.0f;
-
-	_pool.clear();
-
-	//for (const auto& e : _pool)
-	//	if (e->IsAlive()) e->Deactivate();
+	PoolManager<Enemy>::Update(dt);
 }

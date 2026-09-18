@@ -4,6 +4,8 @@
 #include "Sprite.hpp"
 #include "CircleCollider.hpp"
 
+#include "PoolObject.hpp"
+
 
 class Player;
 
@@ -13,25 +15,21 @@ enum class EnemyState
 	Dying
 };
 
-class Enemy
+class Enemy : public PoolObject
 {
 public:
 	Enemy();
-	void Update(float dt);
-	void Draw();
-	void SetPosition(Vector2 position);
-	void SetPlayer(const Player *player);
+	void Update(float dt) override;
+	void Draw() override;
+	void Deactivate() override;
 
-	Vector2 GetPosition() const { return _transform.position; };
-
-	bool IsAlive() const { return _alive; }
-	void Deactivate();
-
+	void Activate(Vector2 pos);
 	void Kill();
 	bool CanBeHit() const { return _state == EnemyState::Moving; };
 
-	void Activate(Vector2 pos);
-
+	void SetPosition(Vector2 position);
+	void SetPlayer(const Player *player);
+	Vector2 GetPosition() const { return _transform.position; };
 	const CircleCollider& GetCollider() const { return _collider; };
 
 private:
@@ -52,8 +50,6 @@ private:
 	float _retargetMax = 2.0f;
 
 	void Retarget();
-
-	bool _alive = true;
 
 	int health = 2; 
 };
