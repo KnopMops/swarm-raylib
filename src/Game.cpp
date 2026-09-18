@@ -30,6 +30,13 @@ Game::Game() : _player(RK::PLAYER)
 	_enemies.Init(&_player);
 	startWave(_wave);
 
+	_lifeTex = &RM::get().GetTexture(RK::PLAYER);
+	_lifeSrc = { 0, 0, (float)_lifeTex->width, (float)_lifeTex->height };
+
+	_lastHealth      = _player.GetHealth();
+	_blinkPrevHealth = _lastHealth;
+	_blinkTimer      = 0.0f;
+
 	_healthPotions.Spawn({ 400.0f, 400.0f });
 	_healthPotions.Spawn({ 650.0f, 400.0f });
 	_healthPotions.Spawn({ 900.0f, 400.0f });
@@ -76,8 +83,14 @@ void Game::restart()
 	_bullets.DeactivateAll();
 	_enemies.DeactivateAll();
 	_healthPotions.DeactivateAll();
+
 	_gameState = GameState::Playing;
 	startWave(1);
+
+	// сброс анимации жизней
+	_lastHealth      = _player.GetHealth();
+	_blinkPrevHealth = _lastHealth;
+	_blinkTimer      = 0.0f;
 }
 
 void Game::startWave(int n)
@@ -169,6 +182,32 @@ void Game::updateShooting()
 	}
 }
 
+void Game::updateHealthBlink(float dt)
+{
+	const int current = _player.GetHealth();
+
+	if (current < _lastHealth)
+	{
+		// игрок получил урон — запускаем мигание «потерянных» иконок
+		_blinkPrevHealth = _lastHealth;
+		_blinkTimer      = HEALTH_BLINK_DURATION;
+		_lastHealth      = current;
+	}
+	else if (current > _lastHealth)
+	{
+		// подлечился — просто мгновенно обновляем, без мигания
+		_lastHealth      = current;
+		_blinkPrevHealth = current;
+		_blinkTimer      = 0.0f;
+	}
+
+	if (_blinkTimer > 0.0f)
+	{
+		_blinkTimer -= dt;
+		if (_blinkTimer < 0.0f) _blinkTimer = 0.0f;
+	}
+}
+
 void Game::updateEntities(float dt)
 {
 	GI::get().Update();
@@ -188,6 +227,8 @@ void Game::updateCamera()
 
 void Game::Update(float dt)
 {
+	updateHealthBlink(dt);
+
 	if (_gameState != GameState::Playing) return;
 
 	const bool frozen = _wavePaused || _waveStarting;
@@ -321,9 +362,9 @@ void Game::drawHud(const Font& font)
 			fontSize, 0.0f, timeColor);
 
 		// ------------------------------------------------------------
-		// ЗАГЛУШКА СПРАВА: сюда потом вставишь картинки (например, иконки жизней)
+		// Панель справа: иконки жизней игрока (с миганием при потере)
 		// ------------------------------------------------------------
-		const float rightPanelW = 200.0f; // ширина панели под иконки
+		const float rightPanelW = 200.0f;
 		const float rightPanelX = GameConfig::BASE_W - rightPanelW - 12.0f;
 
 		DrawRectangleRounded(
@@ -331,8 +372,77 @@ void Game::drawHud(const Font& font)
 			0.3f, 8, ColorAlpha(BLUE, 0.55f)
 		);
 
-		//for (int i = 0; i < _player.GetLives(); ++i)
-		//	DrawTexture(RM::get().GetTexture(RK::HEART), rightPanelX + 8 + i 
+		if (_lifeTex != nullptr && _lifeSrc.width > 0.0f && _lifeSrc.height > 0.0f)
+		{
+			const int currentHealth = _player.GetHealth();
+			const bool blinking     = (_blinkTimer > 0.0f);
+
+			// Пока идёт анимация — раскладываем иконки по СТАРОМУ количеству,
+			// чтобы живые иконки не «прыгали» по панели.
+			const int layoutCount = blinking ? _blinkPrevHealth : currentHealth;
+
+			if (layoutCount > 0)
+			{
+				// внутренние отступы панели под иконки
+				const float lifePadX = 10.0f;
+				const float lifePadY = 4.0f;
+				const float lifeGap  = 4.0f;
+
+				const float availW = rightPanelW - lifePadX * 2.0f;
+				const float availH = panelH      - lifePadY * 2.0f;
+
+				float slotW = (availW - lifeGap * (layoutCount - 1)) / (float)layoutCount;
+				const float slotH = availH;
+
+				if (slotW <= 0.0f)
+					slotW = availW / (float)layoutCount;
+
+				const float scaleW = slotW        / _lifeSrc.width;
+				const float scaleH = slotH        / _lifeSrc.height;
+				const float scale  = (scaleW < scaleH) ? scaleW : scaleH;
+
+				const float iconW = _lifeSrc.width  * scale;
+				const float iconH = _lifeSrc.height * scale;
+
+				const float totalW = iconW * layoutCount + lifeGap * (layoutCount - 1);
+				const float startX = rightPanelX + (rightPanelW - totalW) * 0.5f;
+				const float iconY  = topY + (panelH - iconH) * 0.5f;
+
+				// прогресс анимации: 1 -> 0
+				const float blinkT = blinking
+					? (_blinkTimer / HEALTH_BLINK_DURATION)
+					: 0.0f;
+
+				_lifeDest.clear();
+				_lifeDest.reserve(layoutCount);
+
+				for (int i = 0; i < layoutCount; ++i)
+				{
+					Vector2 pos    = { startX + i * (iconW + lifeGap), iconY };
+					Rectangle dest = { pos.x, pos.y, iconW, iconH };
+
+					Color tint = WHITE;
+
+					// иконки с индексом >= currentHealth — это те, что «уходят»
+					if (i >= currentHealth)
+					{
+						// быстрое мигание + плавное затухание
+						const float phase = sinf((1.0f - blinkT) * 30.0f);
+						const float osc   = (phase > 0.0f) ? 1.0f : 0.2f;
+						float alpha       = blinkT * osc;
+
+						if (alpha < 0.0f) alpha = 0.0f;
+						if (alpha > 1.0f) alpha = 1.0f;
+
+						tint.a = (unsigned char)(255.0f * alpha);
+					}
+
+					_lifeDest.push_back(dest);
+					DrawTexturePro(*_lifeTex, _lifeSrc, dest,
+						{ 0.0f, 0.0f }, 0.0f, tint);
+				}
+			}
+		}
 	}
 }
 

@@ -35,6 +35,7 @@ private:
 	void updateEntities(float dt);
 	void updateCamera();
 	void updateShooting();
+	void updateHealthBlink(float dt);
 
 	void startWave(int n);
 	void spawnWaveEnemies();
@@ -51,7 +52,7 @@ private:
 	BulletManager _bullets;
 	EnemyManager _enemies;
 	HealthPotionManager _healthPotions;
-	
+
 	Minimap _minimap;
 	DebugOverlay _debugOverlay;
 
@@ -60,6 +61,17 @@ private:
 	bool _wavePaused = false;
 	bool _waveStarting = false;
 	float _pauseTimer = 0.0f;
+
+	const Texture2D* _lifeTex = nullptr;
+	Rectangle _lifeSrc = {};
+
+	std::vector<Rectangle> _lifeDest;
+
+	int   _lastHealth      = 0;
+	int   _blinkPrevHealth = 0;
+	float _blinkTimer      = 0.0f;
+
+	static constexpr float HEALTH_BLINK_DURATION = 0.45f;
 
 	GameState _gameState = GameState::Playing;
 };
