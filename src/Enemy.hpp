@@ -24,8 +24,11 @@ public:
 	void Deactivate() override;
 
 	void Activate(Vector2 pos);
-	void Kill();
+	bool Kill();
 	bool CanBeHit() const { return _state == EnemyState::Moving; };
+
+	int  GetHealth() const { return health; }
+	bool IsDying()   const { return _state == EnemyState::Dying; }
 
 	void SetPosition(Vector2 position);
 	void SetPlayer(const Player *player);

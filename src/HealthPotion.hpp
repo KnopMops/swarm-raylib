@@ -31,4 +31,6 @@ private:
 	Sprite _sprite;
 
 	CircleCollider _collider;
+
+	float _lifeTime = 0.0f;
 };

@@ -20,7 +20,6 @@ namespace GameConfig
 
 	constexpr float HALF_BASE_W = BASE_W * 0.5f;
 	constexpr float HALF_BASE_H = BASE_H * 0.5f;
-
 	
 	//
 	inline float MAP_W = 0.0f;
@@ -39,6 +38,9 @@ namespace GameConfig
 	//
 	constexpr int PLAYER_MAX_HEALTH = 3;
 	constexpr float PLAYER_INV_TIME = 1.5f;
+
+	constexpr int HEALTH_DROP_CHANCE = 15;
+	constexpr float HEALTH_POTION_LIFETIME = 5.0f;
 
 	constexpr float PLAYER_COLLIDER_RADIUS = 22.0f;
 	constexpr float PLAYER_SCALE = 0.3f;

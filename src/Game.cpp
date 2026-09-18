@@ -36,10 +36,6 @@ Game::Game() : _player(RK::PLAYER)
 	_lastHealth      = _player.GetHealth();
 	_blinkPrevHealth = _lastHealth;
 	_blinkTimer      = 0.0f;
-
-	_healthPotions.Spawn({ 400.0f, 400.0f });
-	_healthPotions.Spawn({ 650.0f, 400.0f });
-	_healthPotions.Spawn({ 900.0f, 400.0f });
 };
 
 Game::~Game() {};
@@ -87,7 +83,6 @@ void Game::restart()
 	_gameState = GameState::Playing;
 	startWave(1);
 
-	// сброс анимации жизней
 	_lastHealth      = _player.GetHealth();
 	_blinkPrevHealth = _lastHealth;
 	_blinkTimer      = 0.0f;
@@ -99,6 +94,7 @@ void Game::startWave(int n)
 	_waveTime = GameConfig::WAVE_TIME_LIMIT;
 	_wavePaused = false;
 	_waveStarting = true;
+	_healthPotions.DeactivateAll();
 	_pauseTimer = 0.0f;
 }
 
@@ -120,7 +116,15 @@ void Game::updateCollisions()
 			if (bullet->GetCollider().IsCollidingWith(enemy->GetCollider()))
 			{
 				bullet->Deactivate();
-				enemy->Kill();
+
+				const bool justDied = enemy->Kill();
+
+				if (justDied
+					&& GetRandomValue(0, 100) <= GameConfig::HEALTH_DROP_CHANCE)
+				{
+					_healthPotions.Spawn(enemy->GetPosition());
+				}
+
 				break;
 			}
 		}
@@ -133,6 +137,17 @@ void Game::updateCollisions()
 		if (_player.GetCollider().IsCollidingWith(enemy->GetCollider()))
 		{
 			_player.Hit();
+		}
+	}
+
+	for (auto& healthPotion : _healthPotions.GetPool())
+	{
+		if (!healthPotion->IsAlive()) continue;
+
+		if (_player.GetCollider().IsCollidingWith(healthPotion->GetCollider()))
+		{
+			_player.Heal(1);
+			healthPotion->Deactivate();
 		}
 	}
 }

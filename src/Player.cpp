@@ -4,6 +4,8 @@
 
 #include "raymath.h"
 
+#include "algorithm"
+
 
 static constexpr float INVINCIBILITY_SPEED_BOOST = 1.5f;
 
@@ -61,6 +63,12 @@ void Player::Hit()
 
 	_health--;
 	_invTimer = _invTime;
+}
+
+void Player::Heal(int amount)
+{
+	if (_health <= 0) return;
+	_health = std::min(_health + amount, _maxHealth);
 }
 
 Vector2 Player::GetFiringPosition() const

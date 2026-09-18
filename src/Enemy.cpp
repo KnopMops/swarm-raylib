@@ -19,16 +19,20 @@ Enemy::Enemy()
 	health = 2;
 }
 
-void Enemy::Kill()
+bool Enemy::Kill()
 {
-	if (_state == EnemyState::Dying) return;
+	if (_state == EnemyState::Dying) return false;
 
 	health -= 1;
 
-	if (health <= 0) {
+	if (health <= 0)
+	{
 		_state = EnemyState::Dying;
 		_spriteDeath.Reset();
+		return true;   // умер от этого удара
 	}
+
+	return false;      // ещё жив
 }
 
 void Enemy::Retarget()

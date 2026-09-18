@@ -21,6 +21,8 @@ public:
 
 	void Reset();
 	void Hit();
+	void Heal(int amount);
+
 	int GetHealth() const { return _health; };
 	int GetMaxHealth() const { return _maxHealth; };
 
