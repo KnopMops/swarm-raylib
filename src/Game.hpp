@@ -10,6 +10,7 @@
 #include "HealthPotionManager.hpp"
 
 #include "Minimap.hpp"
+#include "DebugOverlay.hpp"
 
 
 enum class GameState { Playing, GameOver };
@@ -27,7 +28,6 @@ public:
 
 private:
 	void drawWorld();
-	void drawDebug(const Font& font);
 	void drawHud(const Font& font);
 
 	void drawGameOverOverlay(const Font& font);
@@ -51,8 +51,9 @@ private:
 	BulletManager _bullets;
 	EnemyManager _enemies;
 	HealthPotionManager _healthPotions;
-
+	
 	Minimap _minimap;
+	DebugOverlay _debugOverlay;
 
 	int _wave = 1;
 	float _waveTime = 0.0f;

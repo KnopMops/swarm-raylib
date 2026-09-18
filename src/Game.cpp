@@ -16,6 +16,7 @@ Game::Game() : _player(RK::PLAYER)
 	GameConfig::MAP_W = (float)background.width;
 
 	_minimap.Init(_player, _enemies);
+	_debugOverlay.Init(_player, _bullets, _enemies, _camera);
 
 	_collisionMap.Init(RK::GAME_BG_COLLISION);
 
@@ -225,38 +226,6 @@ void Game::drawGameOverOverlay(const Font& font)
 	32.0f, 0.0f, WHITE);
 }
 
-void Game::drawDebug(const Font& font)
-{
-	if (GameConfig::SHOW_DEBUG)
-	{
-		DrawRectangle(0, GameConfig::BASE_H - 32, GameConfig::BASE_W, 32,
-					ColorAlpha(DARKBLUE, 0.6f));
-
-		DrawTextEx(font,
-			TextFormat("XY камеры: %.0f, %.0f", _camera.target.x, _camera.target.y),
-			{ 12, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
-
-		DrawTextEx(font,
-			TextFormat("Игрок: XY: %.0f, %.0f, Скорость: %.0f",
-					_player.GetPosition().x, _player.GetPosition().y,
-					_player.GetPlayerSpeed()),
-			{ 300, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
-
-		DrawTextEx(font,
-			TextFormat("Волна: %d, Здоровье: %d/%d, Патроны: %d/%d, Враги: %d/%d", _wave,
-					_player.GetHealth(), _player.GetMaxHealth(),
-					_bullets.CountAlive(), _bullets.GetPoolTotal(),
-					_enemies.CountAlive(), _enemies.GetPoolTotal()),
-			{ 600, GameConfig::BASE_H - 24 }, 20, 0.0f, LIME);
-
-		const char* fpsText = TextFormat("FPS: %d", GetFPS());
-		Vector2 fpsSize = MeasureTextEx(font, fpsText, 20, 0.0f);
-		DrawTextEx(font, fpsText,
-			{ GameConfig::BASE_W - fpsSize.x - 12, GameConfig::BASE_H - 24 },
-			20, 0.0f, LIME);
-	}
-}
-
 void Game::drawHud(const Font& font)
 {
 	const bool playing = (_gameState == GameState::Playing);
@@ -330,10 +299,40 @@ void Game::drawHud(const Font& font)
 
 		const float fontSize = 28.0f;
 		Vector2 timeSize = MeasureTextEx(font, timeText, fontSize, 0.0f);
-		Vector2 timePos = { (GameConfig::BASE_W - timeSize.x) * 0.5f, 12.0f };
+
+		// отступы панели
+		const float padX = 16.0f;
+		const float padY = 6.0f;
+		const float topY = 8.0f;
+		const float panelH = timeSize.y + padY * 2.0f;
+
+		// панель с текстом волны/времени — по центру сверху
+		float panelW = timeSize.x + padX * 2.0f;
+		float panelX = (GameConfig::BASE_W - panelW) * 0.5f;
+
+		DrawRectangleRounded(
+			{ panelX, topY, panelW, panelH },
+			0.3f, 8, ColorAlpha(BLUE, 0.55f)
+		);
 
 		Color timeColor = (_waveTime <= 10.0f) ? RED : WHITE;
-		DrawTextEx(font, timeText, timePos, fontSize, 0.0f, timeColor);
+		DrawTextEx(font, timeText,
+			{ panelX + padX, topY + padY },
+			fontSize, 0.0f, timeColor);
+
+		// ------------------------------------------------------------
+		// ЗАГЛУШКА СПРАВА: сюда потом вставишь картинки (например, иконки жизней)
+		// ------------------------------------------------------------
+		const float rightPanelW = 200.0f; // ширина панели под иконки
+		const float rightPanelX = GameConfig::BASE_W - rightPanelW - 12.0f;
+
+		DrawRectangleRounded(
+			{ rightPanelX, topY, rightPanelW, panelH },
+			0.3f, 8, ColorAlpha(BLUE, 0.55f)
+		);
+
+		//for (int i = 0; i < _player.GetLives(); ++i)
+		//	DrawTexture(RM::get().GetTexture(RK::HEART), rightPanelX + 8 + i 
 	}
 }
 
@@ -363,10 +362,10 @@ void Game::Draw(RenderTexture2D& canvas)
 	ClearBackground(BLACK);
 
 	drawWorld();
-	drawDebug(font);
 	drawHud(font);
 
 	_minimap.Draw();
+	_debugOverlay.Draw(font);
 
 	if (_gameState == GameState::GameOver) drawGameOverOverlay(font);
 
