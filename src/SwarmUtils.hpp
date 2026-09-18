@@ -20,3 +20,17 @@ inline float AngleToTargetDeg(Vector2 from, Vector2 to)
 	Vector2 delta = to - from;
 	return atan2f(delta.y, delta.x) * RAD2DEG;
 }
+
+inline Vector2 RandomSpawnPoint(Vector2 avoidPosition, float minDistance)
+{
+	float minDistSq = minDistance * minDistance;
+
+	Vector2 candidate;
+
+	do {
+		candidate.x = RandomFloat(GameConfig::SPAWN_EDGE_MARGIN, GameConfig::MAP_W - GameConfig::SPAWN_EDGE_MARGIN);
+		candidate.y = RandomFloat(GameConfig::SPAWN_EDGE_MARGIN, GameConfig::MAP_H - GameConfig::SPAWN_EDGE_MARGIN);
+	} while (Vector2DistanceSqr(candidate, avoidPosition) < minDistSq);
+
+	return candidate;
+}

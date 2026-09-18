@@ -13,18 +13,7 @@ void EnemyManager::Init(Player *player)
 
 Vector2 EnemyManager::pickSpawnPoint() const
 {
-	constexpr float MIN_DIST = 300.0f;
-	constexpr float MIN_DIST_SQ = MIN_DIST * MIN_DIST;
-
-	Vector2 playerPos = _player->GetPosition();
-	Vector2 candidate;
-
-	do {
-		candidate.x = RandomFloat(GameConfig::SPAWN_EDGE_MARGIN, GameConfig::MAP_W - GameConfig::SPAWN_EDGE_MARGIN);
-		candidate.y = RandomFloat(GameConfig::SPAWN_EDGE_MARGIN, GameConfig::MAP_H - GameConfig::SPAWN_EDGE_MARGIN);
-	} while (Vector2DistanceSqr(candidate, playerPos) < MIN_DIST_SQ);
-
-	return candidate;
+	return RandomSpawnPoint(_player->GetPosition(), 200.0f);
 }
 
 void EnemyManager::SpawnBatch(int count)
