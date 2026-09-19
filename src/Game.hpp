@@ -32,6 +32,7 @@ private:
 	void drawHud(const Font& font);
 
 	void drawGameOverOverlay(const Font& font);
+	void drawBloodEffect(float intensity) const;
 
 	void updateEntities(float dt);
 	void updateCamera();
@@ -63,6 +64,14 @@ private:
 	bool _wavePaused = false;
 	bool _waveStarting = false;
 	float _pauseTimer = 0.0f;
+
+	// Разозление сущности:
+	// - _enraged         — постоянный флаг (книги больше не спавнятся)
+	// - _enrageOffset    — ПОСТОЯННАЯ добавка к натуральному количеству врагов
+	// - _showEnrageIntro — показывать чёрно-красную сцену (только один раз)
+	bool  _enraged         = false;
+	float _enrageOffset    = 0.0f;
+	bool  _showEnrageIntro = false;
 
 	const Texture2D* _lifeTex = nullptr;
 	Rectangle _lifeSrc = {};

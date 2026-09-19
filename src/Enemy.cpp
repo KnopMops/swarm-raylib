@@ -53,13 +53,13 @@ void Enemy::Update(float dt)
 
 		_transform.MoveForward(_speed * dt);
 		_spriteMove.Update(dt);
-
 		break;
 
 	case EnemyState::Dying:
 		_spriteDeath.Update(dt);
 		if (_spriteDeath.finished) Deactivate();
-	
+		break;
+
 	default:
 		break;
 	}
@@ -81,11 +81,10 @@ void Enemy::Activate(Vector2 position)
 
 void Enemy::Deactivate()
 {
-	if (health > 0) health -= 1;
-	else {
-		_alive = false;
-		_transform.position = GameConfig::OFFSCREEN_POSITION;
-	}
+	// Deactivate — это «убрать с поля», она НЕ трогает HP.
+	// Сбрасывание HP делает Activate() при повторном использовании слота.
+	_alive = false;
+	_transform.position = GameConfig::OFFSCREEN_POSITION;
 }
 
 void Enemy::Draw()
@@ -96,12 +95,12 @@ void Enemy::Draw()
 	{
 	case EnemyState::Moving:
 		_spriteMove.Draw(_transform);
-
 		break;
 
 	case EnemyState::Dying:
 		_spriteDeath.Draw(_transform);
-	
+		break;
+
 	default:
 		break;
 	}

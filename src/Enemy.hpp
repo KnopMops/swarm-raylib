@@ -54,5 +54,5 @@ private:
 
 	void Retarget();
 
-	int health = 2; 
+	int health = 2;
 };

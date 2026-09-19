@@ -18,8 +18,16 @@ Vector2 EnemyManager::pickSpawnPoint() const
 
 void EnemyManager::SpawnBatch(int count)
 {
+	_batchTotal     = count;   // фиксируем «сколько всего будет»
 	_batchRemaining = count;
-	_staggerTimer = 0.0f;
+	_staggerTimer   = 0.0f;
+}
+
+void EnemyManager::CancelBatch()
+{
+	_batchRemaining = 0;
+	_batchTotal     = 0;
+	_staggerTimer   = 0.0f;
 }
 
 void EnemyManager::Spawn(Vector2 pos)
