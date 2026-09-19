@@ -526,9 +526,14 @@ void Game::drawHud(const Font& font)
 		const bool booksPhase =
 			(!_enraged && _enemies.IsBatchComplete() && _books.CountAlive() > 0);
 
+		const int aliveBooks = _books.CountAlive();
+
+		// Текст панели: либо «Собери все книги», либо «Волна N», а в конце — счётчик книг.
 		const char* timeText = booksPhase
-			? TextFormat("Собери все книги: %d:%02d", minutes, seconds)
-			: TextFormat("Волна %d: %d:%02d", _wave, minutes, seconds);
+			? TextFormat("Собери все книги: %d:%02d   |   Книг: %d",
+				minutes, seconds, aliveBooks)
+			: TextFormat("Волна %d: %d:%02d   |   Книг: %d",
+				_wave, minutes, seconds, aliveBooks);
 
 		const float fontSize = 28.0f;
 		Vector2 timeSize = MeasureTextEx(font, timeText, fontSize, 0.0f);
@@ -559,7 +564,7 @@ void Game::drawHud(const Font& font)
 			Vector2 hintSize = MeasureTextEx(font, hint, hintFont, 0.0f);
 			Vector2 hintPos  = {
 				(GameConfig::BASE_W - hintSize.x) * 0.5f,
-				topY + panelH + 4.0f
+				topY + panelH + 6.0f
 			};
 
 			DrawTextEx(font, hint, hintPos, hintFont, 0.0f, ColorAlpha(RED, 0.9f));
