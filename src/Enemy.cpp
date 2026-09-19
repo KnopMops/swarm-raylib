@@ -29,10 +29,10 @@ bool Enemy::Kill()
 	{
 		_state = EnemyState::Dying;
 		_spriteDeath.Reset();
-		return true;   // умер от этого удара
+		return true;
 	}
 
-	return false;      // ещё жив
+	return false;
 }
 
 void Enemy::Retarget()
@@ -81,8 +81,6 @@ void Enemy::Activate(Vector2 position)
 
 void Enemy::Deactivate()
 {
-	// Deactivate — это «убрать с поля», она НЕ трогает HP.
-	// Сбрасывание HP делает Activate() при повторном использовании слота.
 	_alive = false;
 	_transform.position = GameConfig::OFFSCREEN_POSITION;
 }

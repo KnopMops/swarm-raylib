@@ -63,6 +63,10 @@ void ResourceManager::Load()
 
 	loadTexture(RK::COCKROACH_MOVE, "cockroach-move.png");
 	loadTexture(RK::COCKROACH_DEATH, "cockroach-death.png");
+	loadTexture(RK::SCORPION_MOVE, "scorpion-move-0.png");
+	loadTexture(RK::SCORPION_DEATH, "scorpion-death.png");
+	loadTexture(RK::KLIVER_MOVE, "kliver-move.png");
+	loadTexture(RK::KLIVER_DEATH, "kliver-death.png");
 
 	loadTexture(RK::HEALTH_POTION, "healthPotion.png");
 
