@@ -15,10 +15,25 @@ enum class EnemyState
 	Dying
 };
 
+struct EnemyDef
+{
+	SpriteDef move;
+	SpriteDef death;
+
+	float scale = 1.0f;
+	float speed = 80.0f;
+	float colliderRadius = 30.0f;
+	float retargetMin = 1.0f;
+	float retargetMax = 2.0f;
+};
+
 class Enemy : public PoolObject
 {
 public:
-	Enemy();
+	Enemy() = default;
+
+	void Init(const EnemyDef& def);
+
 	void Update(float dt) override;
 	void Draw() override;
 	void Deactivate() override;

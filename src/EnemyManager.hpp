@@ -3,6 +3,8 @@
 #include "Enemy.hpp"
 #include "PoolManager.hpp"
 
+#include "vector"
+
 
 class Player;
 
@@ -18,17 +20,16 @@ public:
 
 	bool IsBatchComplete() const { return _batchRemaining == 0 && CountAlive() == 0; };
 
-	// Сколько врагов заказано на текущую волну (не уменьшается по мере спавна).
 	int GetBatchTotal()     const { return _batchTotal; }
-	// Сколько ещё предстоит выпустить.
 	int GetBatchRemaining() const { return _batchRemaining; }
 
 private:
-	void Spawn(Vector2 pos);
+	void Spawn(const EnemyDef& def, Vector2 pos);
 	Vector2 pickSpawnPoint() const;
 
-	Player* _player = nullptr;
+	std::vector<EnemyDef> _defs;
 
+	Player* _player = nullptr;
 	float _staggerInterval = 0.15f;
 	float _staggerTimer    = 0.0f;
 	int   _batchRemaining  = 0;

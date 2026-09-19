@@ -3,20 +3,28 @@
 #include "Player.hpp"
 #include "GameConfig.hpp"
 
-Enemy::Enemy()
+void Enemy::Init(const EnemyDef& def)
 {
-	_spriteMove.Init(RK::COCKROACH_MOVE, 64, 64, 8, 8.0f);
-	_spriteMove.rotationOffset = 90.0f;
+	_spriteMove.Init(
+		def.move.textureKey, def.move.frameWidth, def.move.frameHeight,
+		def.move.frameCount, def.move.framesPerSecond, def.move.loop
+	);
+	_spriteMove.rotationOffset = def.move.rotationOffset;
 
-	_spriteDeath.Init(RK::COCKROACH_DEATH, 64, 64, 32, 64.0f, false);
-	_spriteDeath.rotationOffset = 90.0f;
+	_spriteDeath.Init(
+		def.death.textureKey, def.death.frameWidth, def.death.frameHeight,
+		def.death.frameCount, def.death.framesPerSecond, def.death.loop
+	);
+	_spriteDeath.rotationOffset = def.death.rotationOffset;
 
-	_transform.scale = 1.0f;
-	_transform.rotation = 180.0f;
+	_transform.scale = def.scale;
+	_transform.rotation = 0.0f;
 
-	_collider.Init(30.0f, _transform);
+	_speed = def.speed;
+	_collider.Init(def.colliderRadius, _transform);
 
-	health = 2;
+	_retargetMin = def.retargetMin;
+	_retargetMax = def.retargetMax;
 }
 
 bool Enemy::Kill()
