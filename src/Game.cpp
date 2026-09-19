@@ -32,8 +32,12 @@ Game::Game() : _player(RK::PLAYER)
 
 	startWave(_wave);
 
-	_lifeTex = &RM::get().GetTexture(RK::PLAYER);
-	_lifeSrc = { 0, 0, (float)_lifeTex->width, (float)_lifeTex->height };
+	// Передаём HUD-у иконку жизни один раз при инициализации
+	{
+		const Texture2D& lifeTex = RM::get().GetTexture(RK::PLAYER);
+		Rectangle lifeSrc = { 0, 0, (float)lifeTex.width, (float)lifeTex.height };
+		_hud.Init(&lifeTex, lifeSrc);
+	}
 
 	_enraged         = false;
 	_enrageOffset    = 0.0f;
@@ -251,9 +255,6 @@ void Game::updateWaves(float dt)
 			_showEnrageIntro = true;
 
 			// Усиленной будет следующая волна (текущая + 1).
-			// Считаем offset так, чтобы:
-			//   base(boost) + offset      = base(boost) * 2.5
-			//   base(boost + n) + offset  = base(boost) * 2.5 + RAMP * n
 			const int boostWave = _wave + 1;
 			const int natural   = GameConfig::WAVE_ENEMY_BASE
 			                    + GameConfig::WAVE_ENEMY_RAMP * boostWave;
@@ -262,8 +263,6 @@ void Game::updateWaves(float dt)
 		}
 
 		// Чистим поле, чтобы следующая волна стартовала без «хвостов».
-		// CancelBatch обязательно ПЕРЕД DeactivateAll, иначе уже заказанные,
-		// но ещё не заспавненные враги продолжат появляться после деактивации.
 		_enemies.CancelBatch();
 		_enemies.DeactivateAll();
 		_books.DeactivateAll();
@@ -289,7 +288,7 @@ void Game::updateHealthBlink(float dt)
 	if (current < _lastHealth)
 	{
 		_blinkPrevHealth = _lastHealth;
-		_blinkTimer      = HEALTH_BLINK_DURATION;
+		_blinkTimer      = HudOverlay::HEALTH_BLINK_DURATION;
 		_lastHealth      = current;
 	}
 	else if (current > _lastHealth)
@@ -344,309 +343,6 @@ void Game::Update(float dt)
 	if (_player.IsDead()) _gameState = GameState::GameOver;
 }
 
-void Game::drawGameOverOverlay(const Font& font)
-{
-	DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
-
-	const char* title = "ИГРА ОКОНЧЕНА";
-
-	Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
-
-	DrawTextEx(font, title,
-	{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
-	GameConfig::BASE_H * 0.5f - 60.0f },
-	60.0f, 0.0f, RED);
-
-	const char* prompt = "Нажмите R чтобы возродится или M чтобы выйти в главное меню.";
-	Vector2 promptSize = MeasureTextEx(font, prompt, 32.0f, 0.0f);
-	DrawTextEx(font, prompt,
-	{ (GameConfig::BASE_W - promptSize.x) * 0.5f,
-	GameConfig::BASE_H * 0.5f + 12.0f },
-	32.0f, 0.0f, WHITE);
-}
-
-void Game::drawBloodEffect(float intensity) const
-{
-	if (intensity <= 0.0f) return;
-
-	const float pulse = 0.80f + 0.20f * sinf(GetTime() * 5.0f);
-
-	const int stripW  = 110;
-	const int screenH = (int)GameConfig::BASE_H;
-	const int screenW = (int)GameConfig::BASE_W;
-
-	for (int i = 0; i < stripW; ++i)
-	{
-		const float t = 1.0f - (float)i / (float)stripW;
-
-		const float wobble = 1.0f + 0.15f * sinf(i * 0.35f + GetTime() * 3.0f);
-
-		float local = t * t * pulse * intensity * wobble;
-		if (local < 0.0f) local = 0.0f;
-		if (local > 1.0f) local = 1.0f;
-
-		const unsigned char a = (unsigned char)(220.0f * local);
-		if (a == 0) continue;
-
-		Color c = { (unsigned char)170, (unsigned char)0, (unsigned char)0, a };
-
-		DrawRectangle(i, 0, 1, screenH, c);
-		DrawRectangle(screenW - 1 - i, 0, 1, screenH, c);
-	}
-}
-
-void Game::drawHud(const Font& font)
-{
-	const bool playing = (_gameState == GameState::Playing);
-
-	// ------------------------------------------------------------
-	// Переход между волнами
-	// ------------------------------------------------------------
-	if (playing && _wavePaused)
-	{
-		// Особый экран показываем только один раз — при первом разозлении
-		if (_showEnrageIntro)
-		{
-			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, BLACK);
-			drawBloodEffect(1.0f);
-
-			const float t      = (_pauseTimer / GameConfig::WAVE_PAUSE);
-			const float fadeIn = (t * 4.0f < 1.0f) ? (t * 4.0f) : 1.0f;
-			const float pulse  = 0.75f + 0.25f * sinf(_pauseTimer * 10.0f);
-			const float a      = fadeIn * pulse;
-
-			const char* title = "НЕ НУЖНО БЫЛО ЗЛИТЬ СУЩНОСТЬ";
-			const float titleFont = 56.0f;
-			Vector2 titleSize = MeasureTextEx(font, title, titleFont, 0.0f);
-			Vector2 titlePos  = {
-				(GameConfig::BASE_W - titleSize.x) * 0.5f,
-				GameConfig::BASE_H * 0.5f - 60.0f
-			};
-
-			Color titleColor = {
-				(unsigned char)220,
-				(unsigned char)30,
-				(unsigned char)30,
-				(unsigned char)(255.0f * a)
-			};
-
-			DrawTextEx(font, title, titlePos, titleFont, 0.0f, titleColor);
-
-			const char* hint = "Следующая волна будет усилена, а книги исчезнут навсегда";
-			const float hintFont = 24.0f;
-			Vector2 hintSize = MeasureTextEx(font, hint, hintFont, 0.0f);
-			Vector2 hintPos  = {
-				(GameConfig::BASE_W - hintSize.x) * 0.5f,
-				GameConfig::BASE_H * 0.5f + 40.0f
-			};
-
-			Color hintColor = {
-				(unsigned char)255,
-				(unsigned char)80,
-				(unsigned char)80,
-				(unsigned char)(255.0f * a)
-			};
-
-			DrawTextEx(font, hint, hintPos, hintFont, 0.0f, hintColor);
-		}
-		else
-		{
-			// Обычный экран успешного завершения волны
-			DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.7f));
-
-			const char* title = "ВЫ УБИЛИ ВСЕХ ВРАГОВ!";
-			Vector2 titleSize = MeasureTextEx(font, title, 60.0f, 0.0f);
-			DrawTextEx(font, title,
-			{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
-			  GameConfig::BASE_H * 0.5f - 80.0f },
-			60.0f, 0.0f, GREEN);
-
-			float remain = GameConfig::WAVE_PAUSE - _pauseTimer;
-			if (remain < 0.0f) remain = 0.0f;
-
-			const char* next = TextFormat("Следующая волна начнётся через %.1f с", remain);
-			Vector2 nextSize = MeasureTextEx(font, next, 32.0f, 0.0f);
-			DrawTextEx(font, next,
-			{ (GameConfig::BASE_W - nextSize.x) * 0.5f,
-			  GameConfig::BASE_H * 0.5f + 12.0f },
-			32.0f, 0.0f, WHITE);
-
-			const char* hint = "Нажмите L чтобы начать сейчас";
-			Vector2 hintSize = MeasureTextEx(font, hint, 24.0f, 0.0f);
-			DrawTextEx(font, hint,
-			{ (GameConfig::BASE_W - hintSize.x) * 0.5f,
-			  GameConfig::BASE_H * 0.5f + 56.0f },
-			24.0f, 0.0f, GRAY);
-		}
-	}
-
-	// ------------------------------------------------------------
-	// Старт волны
-	// ------------------------------------------------------------
-	if (playing && _waveStarting)
-	{
-		DrawRectangle(0, 0, GameConfig::BASE_W, GameConfig::BASE_H, ColorAlpha(BLACK, 0.5f));
-
-		float remain = GameConfig::WAVE_PAUSE - _pauseTimer;
-		if (remain < 0.0f) remain = 0.0f;
-
-		const char* title = TextFormat("ВОЛНА %d", _wave);
-		Vector2 titleSize = MeasureTextEx(font, title, 80.0f, 0.0f);
-		DrawTextEx(font, title,
-		{ (GameConfig::BASE_W - titleSize.x) * 0.5f,
-		  GameConfig::BASE_H * 0.5f - 80.0f },
-		80.0f, 0.0f, YELLOW);
-
-		const char* countdown = TextFormat("%.1f", remain);
-		Vector2 cdSize = MeasureTextEx(font, countdown, 72.0f, 0.0f);
-		DrawTextEx(font, countdown,
-		{ (GameConfig::BASE_W - cdSize.x) * 0.5f,
-		  GameConfig::BASE_H * 0.5f },
-		72.0f, 0.0f, WHITE);
-
-		const char* hint = "Приготовьтесь!";
-		Vector2 hintSize = MeasureTextEx(font, hint, 28.0f, 0.0f);
-		DrawTextEx(font, hint,
-		{ (GameConfig::BASE_W - hintSize.x) * 0.5f,
-		  GameConfig::BASE_H * 0.5f + 80.0f },
-		28.0f, 0.0f, LIGHTGRAY);
-	}
-
-	// ------------------------------------------------------------
-	// Обычный HUD во время волны
-	// ------------------------------------------------------------
-	if (playing && !_wavePaused && !_waveStarting)
-	{
-		int totalSeconds = (int)_waveTime;
-		if (totalSeconds < 0) totalSeconds = 0;
-		int minutes = totalSeconds / 60;
-		int seconds = totalSeconds % 60;
-
-		// Фаза книг возможна только когда сущность НЕ разозлена
-		const bool booksPhase =
-			(!_enraged && _enemies.IsBatchComplete() && _books.CountAlive() > 0);
-
-		const int aliveBooks = _books.CountAlive();
-
-		// Текст панели: либо «Собери все книги», либо «Волна N», а в конце — счётчик книг.
-		const char* timeText = booksPhase
-			? TextFormat("Собери все книги: %d:%02d   |   Книг: %d",
-				minutes, seconds, aliveBooks)
-			: TextFormat("Волна %d: %d:%02d   |   Книг: %d",
-				_wave, minutes, seconds, aliveBooks);
-
-		const float fontSize = 28.0f;
-		Vector2 timeSize = MeasureTextEx(font, timeText, fontSize, 0.0f);
-
-		const float padX = 16.0f;
-		const float padY = 6.0f;
-		const float topY = 8.0f;
-		const float panelH = timeSize.y + padY * 2.0f;
-
-		float panelW = timeSize.x + padX * 2.0f;
-		float panelX = (GameConfig::BASE_W - panelW) * 0.5f;
-
-		DrawRectangleRounded(
-			{ panelX, topY, panelW, panelH },
-			0.3f, 8, ColorAlpha(BLUE, 0.55f)
-		);
-
-		Color timeColor = (_waveTime <= 10.0f) ? RED : WHITE;
-		DrawTextEx(font, timeText,
-			{ panelX + padX, topY + padY },
-			fontSize, 0.0f, timeColor);
-
-		if (booksPhase)
-		{
-			const float hintFont = 18.0f;
-			const char* hint = "Иначе сущность разозлится и все последующие волны будут усилены на 2.5";
-
-			Vector2 hintSize = MeasureTextEx(font, hint, hintFont, 0.0f);
-			Vector2 hintPos  = {
-				(GameConfig::BASE_W - hintSize.x) * 0.5f,
-				topY + panelH + 6.0f
-			};
-
-			DrawTextEx(font, hint, hintPos, hintFont, 0.0f, ColorAlpha(RED, 0.9f));
-		}
-
-		// ------- Панель справа: иконки жизней -------
-		const float rightPanelW = 200.0f;
-		const float rightPanelX = GameConfig::BASE_W - rightPanelW - 12.0f;
-
-		DrawRectangleRounded(
-			{ rightPanelX, topY, rightPanelW, panelH },
-			0.3f, 8, ColorAlpha(BLUE, 0.55f)
-		);
-
-		if (_lifeTex != nullptr && _lifeSrc.width > 0.0f && _lifeSrc.height > 0.0f)
-		{
-			const int currentHealth = _player.GetHealth();
-			const bool blinking     = (_blinkTimer > 0.0f);
-
-			const int layoutCount = blinking ? _blinkPrevHealth : currentHealth;
-
-			if (layoutCount > 0)
-			{
-				const float lifePadX = 10.0f;
-				const float lifePadY = 4.0f;
-				const float lifeGap  = 4.0f;
-
-				const float availW = rightPanelW - lifePadX * 2.0f;
-				const float availH = panelH      - lifePadY * 2.0f;
-
-				float slotW = (availW - lifeGap * (layoutCount - 1)) / (float)layoutCount;
-				const float slotH = availH;
-
-				if (slotW <= 0.0f)
-					slotW = availW / (float)layoutCount;
-
-				const float scaleW = slotW        / _lifeSrc.width;
-				const float scaleH = slotH        / _lifeSrc.height;
-				const float scale  = (scaleW < scaleH) ? scaleW : scaleH;
-
-				const float iconW = _lifeSrc.width  * scale;
-				const float iconH = _lifeSrc.height * scale;
-
-				const float totalW = iconW * layoutCount + lifeGap * (layoutCount - 1);
-				const float startX = rightPanelX + (rightPanelW - totalW) * 0.5f;
-				const float iconY  = topY + (panelH - iconH) * 0.5f;
-
-				const float blinkT = blinking
-					? (_blinkTimer / HEALTH_BLINK_DURATION)
-					: 0.0f;
-
-				_lifeDest.clear();
-				_lifeDest.reserve(layoutCount);
-
-				for (int i = 0; i < layoutCount; ++i)
-				{
-					Vector2 pos    = { startX + i * (iconW + lifeGap), iconY };
-					Rectangle dest = { pos.x, pos.y, iconW, iconH };
-
-					Color tint = WHITE;
-
-					if (i >= currentHealth)
-					{
-						const float phase = sinf((1.0f - blinkT) * 30.0f);
-						const float osc   = (phase > 0.0f) ? 1.0f : 0.2f;
-						float alpha       = blinkT * osc;
-
-						if (alpha < 0.0f) alpha = 0.0f;
-						if (alpha > 1.0f) alpha = 1.0f;
-
-						tint.a = (unsigned char)(255.0f * alpha);
-					}
-
-					_lifeDest.push_back(dest);
-					DrawTexturePro(*_lifeTex, _lifeSrc, dest,
-						{ 0.0f, 0.0f }, 0.0f, tint);
-				}
-			}
-		}
-	}
-}
-
 void Game::drawWorld()
 {
 	BeginMode2D(_camera);
@@ -674,20 +370,38 @@ void Game::Draw(RenderTexture2D& canvas)
 	ClearBackground(BLACK);
 
 	drawWorld();
-	drawHud(font);
+
+	// Заполняем снимок состояния и передаём в HUD
+	HudState hud;
+	hud.wave                 = _wave;
+	hud.waveTime             = _waveTime;
+	hud.wavePaused           = _wavePaused;
+	hud.waveStarting         = _waveStarting;
+	hud.pauseTimer           = _pauseTimer;
+	hud.enraged              = _enraged;
+	hud.showEnrageIntro      = _showEnrageIntro;
+	hud.enemiesBatchComplete = _enemies.IsBatchComplete();
+	hud.aliveBooks           = _books.CountAlive();
+	hud.currentHealth        = _player.GetHealth();
+	hud.blinkPrevHealth      = _blinkPrevHealth;
+	hud.blinkTimer           = _blinkTimer;
+
+	if (_gameState == GameState::Playing)
+		_hud.Draw(font, hud);
 
 	// Кровь по бокам, пока сущность разозлена.
 	// Во время игры — лёгкая (0.4), в момент интро — сильная (1.0).
 	if (_enraged)
 	{
 		const float intensity = _showEnrageIntro ? 1.0f : 0.4f;
-		drawBloodEffect(intensity);
+		_hud.DrawBloodEffect(intensity);
 	}
 
 	_minimap.Draw();
 	_debugOverlay.Draw(font);
 
-	if (_gameState == GameState::GameOver) drawGameOverOverlay(font);
+	if (_gameState == GameState::GameOver)
+		_hud.DrawGameOverOverlay(font);
 
 	EndTextureMode();
 }
